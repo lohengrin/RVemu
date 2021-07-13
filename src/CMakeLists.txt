@@ -1,6 +1,6 @@
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES main.cpp "Cpu.h" "Cpu.cpp")
 
 add_executable(RVemu ${SOURCE_FILES})
 
-install(TARGETS divider DESTINATION ${RVEMU_INSTALL_BIN_DIR})
+install(TARGETS RVemu DESTINATION ${RVEMU_INSTALL_BIN_DIR})
