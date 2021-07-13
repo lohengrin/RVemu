@@ -6,11 +6,11 @@
 
 //---------------------------------------------------------
 Cpu::Cpu(size_t memorySize) :
-	regs{0},
+	regs{ 0 },
 	pc(0),
-	dram(nullptr)
+	dram(0)
 {
-	dram = new uint8_t[memorySize];
+	dram.resize(memorySize);
 
 	regs[REGSP] = memorySize;
 }
@@ -18,7 +18,41 @@ Cpu::Cpu(size_t memorySize) :
 //---------------------------------------------------------
 Cpu::~Cpu()
 {
-	delete[] dram;
+}
+
+//---------------------------------------------------------
+uint32_t Cpu::fetch() const
+{
+	return (uint32_t)dram[pc] | (uint32_t)dram[pc + 1] << 8 | (uint32_t)dram[pc + 2] << 16 | (uint32_t)dram[pc + 3] << 24;
+}
+
+//---------------------------------------------------------
+void Cpu::execute(uint32_t inst)
+{
+	uint8_t opcode = inst & 0x7f;
+	uint8_t rd = ((inst >> 7) & 0x1f);
+	uint8_t rs1 = ((inst >> 15) & 0x1f);
+	uint8_t rs2 = ((inst >> 20) & 0x1f);
+
+	// Emulate that register x0 is hardwired with all bits equal to 0.
+	regs[0] = 0;
+
+	switch (opcode)
+	{
+	case 0x13: // addi
+	{
+		uint64_t imm = (inst & 0xfff00000) >> 20;
+		regs[rd] = regs[rs1] + imm;
+		break;
+	}
+	case 0x33: // add
+	{
+		regs[rd] = regs[rs1] + regs[rs2];
+		break;
+	}
+	default:
+		std::cerr << "Opcode not implemented: 0x" << std::hex << opcode << std::endl;
+	}
 }
 
 //---------------------------------------------------------
