@@ -1,4 +1,6 @@
 #include "Cpu.h"
+#include "Memory.h"
+#include "Bus.h"
 
 #include <iostream>
 #include <fstream>
@@ -20,26 +22,38 @@ int main(int argc, const char *argv[])
     }
 
     // Instanciate cpu
-    Cpu cpu(1024);
-    cpu.printRegisters();
+    Memory mem;
+    Bus bus(mem);
+    Cpu cpu(bus);
 
+    cpu.printRegisters();
     // Load program
     {
-        std::ifstream program(argv[1], std::ios::in | std::ios::binary);
+        std::ifstream program(argv[1], std::ios::in | std::ios::binary | std::ios::ate);
         if (!program.is_open())
         {
             std::cerr << "Unable to read: " << argv[1] << std::endl;
             return 1;
         }
 
-        program.read((char*)&cpu.dram[0], 1024);
+        size_t fsize = program.tellg();
+        program.seekg(0, std::ios::beg);
+
+        char* buffer = new char[fsize];
+        program.read(buffer, fsize);
+
+        mem.preload(0, (uint8_t*)buffer, fsize);
+        delete[] buffer;
     }
 
     // Run program
-    while( cpu.pc < cpu.dram.size())
+
+    while(true)
     {
         // 1. Fetch.
         auto inst = cpu.fetch();
+        if (inst == 0)
+            break;
 
         // 2. Add 4 to the program counter.
         cpu.pc = cpu.pc + 4;
