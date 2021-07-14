@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <iomanip>
 
 //---------------------------------------------------------
 Cpu::Cpu(size_t memorySize) :
@@ -64,9 +65,9 @@ void Cpu::printRegisters()
 		" s6 ", " s7 ", " s8 ", " s9 ", " s10", " s11", " t3 ", " t4 ", " t5 ", " t6 " };
 
 	for (int i = 0; i < 32; i++)
-		std::cout << header[i] << "\t";
-	std::cout << std::endl;
-	for (int i = 0; i < 32; i++)
-		std::cout << std::hex << "0x" << regs[i] << "\t";
-	std::cout << std::endl;
+	{
+		std::cout << std::setfill('0') << std::setw(2) << std::dec << i << ": " << header[i] << ": " << std::hex << "0x" << std::setw(8) << regs[i] << "\t";
+		if ((i+1) % 5 == 0)
+			std::cout << std::endl;
+	}
 }
