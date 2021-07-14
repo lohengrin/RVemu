@@ -15,7 +15,7 @@ public:
 	virtual ~Cpu();
 
 	//! Cpu functions
-	uint64_t load(uint64_t addr, uint8_t size);
+	uint64_t load(uint64_t addr, uint8_t size) const;
 	void store(uint64_t addr, uint8_t size, uint64_t value);
 	uint32_t fetch() const;
 	void execute(uint32_t inst);
@@ -23,11 +23,14 @@ public:
 
 	//! Utility
 	void printRegisters();
+	void printInstruction(uint32_t inst) const;
+	void printStack() const;
 
 	uint64_t	pc;
 
 protected:
 	uint64_t warppingAdd(uint64_t a, uint64_t b) const { return a + b; }
+	uint64_t warppingAdd(uint64_t a, int64_t b) const { return a + b; }
 	uint64_t warppingSub(uint64_t a, uint64_t b) const { return a - b; }
 	uint64_t warppingMul(uint64_t a, uint64_t b) const { return a * b; }
 	uint64_t warppingShr(uint64_t a, uint64_t b) const { return a >> b; }

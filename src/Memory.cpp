@@ -18,7 +18,7 @@ void Memory::preload(size_t addr, uint8_t* data, size_t size)
 }
 
 /// Load bytes from the little-endiam dram.
-uint64_t Memory::load(uint64_t addr, uint8_t size)
+uint64_t Memory::load(uint64_t addr, uint8_t size) const
 {
     switch (size)
     {
@@ -36,31 +36,31 @@ void Memory::store(uint64_t addr, uint8_t size, uint64_t value)
 {
     switch(size)
     {
-    case 8: store8(addr, value);
-    case 16: store16(addr, value);
-    case 32: store32(addr, value);
-    case 64: store64(addr, value);
+    case 8: store8(addr, value); break;
+    case 16: store16(addr, value); break;
+    case 32: store32(addr, value); break;
+    case 64: store64(addr, value); break;
     default:
         std::cerr << "Memory::STORE error: unknown size: " << size << std::endl;
     }
 }
 
 /// Load a byte from the little-endian dram.
-uint64_t Memory::load8(uint64_t addr)
+uint64_t Memory::load8(uint64_t addr) const
 {
     auto index = addr - DRAM_BASE;
     return static_cast<uint64_t>(dram[index]);
 }
 
 /// Load 2 bytes from the little-endian dram.
-uint64_t Memory::load16(uint64_t addr)
+uint64_t Memory::load16(uint64_t addr) const
 {
     auto index = addr - DRAM_BASE;
     return static_cast<uint64_t>(dram[index]) | static_cast<uint64_t>(dram[index + 1]) << 8;
 }
 
 /// Load 4 bytes from the little-endian dram.
-uint64_t Memory::load32(uint64_t addr)
+uint64_t Memory::load32(uint64_t addr) const
 {
     auto index = addr - DRAM_BASE;
     return static_cast<uint64_t>(dram[index])
@@ -70,7 +70,7 @@ uint64_t Memory::load32(uint64_t addr)
 }
 
 /// Load 8 bytes from the little-endian dram.
-uint64_t Memory::load64(uint64_t addr)
+uint64_t Memory::load64(uint64_t addr) const
 {
     auto index = addr - DRAM_BASE;
     return static_cast<uint64_t>(dram[index])

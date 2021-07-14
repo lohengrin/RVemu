@@ -3,6 +3,7 @@
 #include "Bus.h"
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 
 
@@ -47,21 +48,27 @@ int main(int argc, const char *argv[])
     }
 
     // Run program
-
-    while(true)
+    uint32_t inst = 0;
+    while(cpu.pc != 0)
     {
         // 1. Fetch.
-        auto inst = cpu.fetch();
+        inst = cpu.fetch();
         if (inst == 0)
             break;
+
+        //std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(8) << cpu.pc << std::endl;
 
         // 2. Add 4 to the program counter.
         cpu.pc = cpu.pc + 4;
 
         // 3. Decode.
+
         // 4. Execute.
+        //cpu.printInstruction(inst);
+        //cpu.printStack();
         cpu.execute(inst);
     }
+    std::cout << "End of program" << std::endl;
 
     cpu.printRegisters();
 
