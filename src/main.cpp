@@ -56,7 +56,7 @@ int main(int argc, const char *argv[])
         if (inst == 0)
             break;
 
-        //std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(8) << cpu.pc << std::endl;
+        //std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(16) << cpu.pc << std::endl;
 
         // 2. Add 4 to the program counter.
         cpu.pc = cpu.pc + 4;

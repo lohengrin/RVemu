@@ -215,7 +215,7 @@ void Cpu::execute(uint32_t inst)
 		uint32_t shamt = (imm & 0x1f);
 		switch (funct3) {
 		case 0x0: // addiw
-			regs[rd] = ASU64(ASI64(ASI32(warppingShl(regs[rs1], imm))));
+			regs[rd] = ASU64(ASI64(ASI32(warppingAdd(regs[rs1], imm))));
 			break;
 		case 0x1: // slliw
 			regs[rd] = ASU64(ASI64(ASI32(warppingShl(regs[rs1], shamt))));
@@ -452,7 +452,7 @@ void Cpu::printRegisters()
 {
 	for (int i = 0; i < 32; i++)
 	{
-		std::cout << std::setfill('0') << std::setw(2) << std::dec << i << ": " << RegisterNames[i] << ": " << std::hex << "0x" << std::setw(8) << regs[i] << "\t";
+		std::cout << std::setfill('0') << std::setw(2) << std::dec << i << ": " << RegisterNames[i] << ": " << std::hex << "0x" << std::setw(16) << regs[i] << "\t";
 		if ((i + 1) % 5 == 0)
 			std::cout << std::endl;
 	}
@@ -493,8 +493,8 @@ void Cpu::printStack() const
 	std::cout << "==== Stack ====" << std::endl;
 	for (uint64_t sp = regs[REGSP]; sp < DRAM_BASE + DEFAULT_MEMORYSIZE; sp += 8)
 	{
-		std::cout << std::hex << "0x" << std::setfill('0') << std::setw(8) << sp
-			<< std::hex << "   0x" << std::setfill('0') << std::setw(8) << load(sp, 64) << std::endl;
+		std::cout << std::hex << "0x" << std::setfill('0') << std::setw(16) << sp
+			<< std::hex << "   0x" << std::setfill('0') << std::setw(16) << load(sp, 64) << std::endl;
 	}
 	std::cout << "===============" << std::endl;
 }
