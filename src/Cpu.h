@@ -10,6 +10,12 @@
 
 class Cpu {
 public:
+	enum class Mode {
+		User = 0x00,
+		Supervisor = 0x01,
+		Machine = 0x03,
+	};
+	
 	//! Object 
 	Cpu(Bus& b);
 	virtual ~Cpu();
@@ -54,5 +60,8 @@ protected:
 	uint64_t	regs[32];
 	//! Control and Status registers
 	uint64_t	csrs[4096];
+	//! Current mode
+	Mode		mode;
+
 	Bus& bus;
 };
