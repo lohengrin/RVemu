@@ -220,14 +220,14 @@ void Cpu::execute(uint32_t inst)
 			default: printExecuteError(opcode, funct3, funct7);
 			} break;
 		case 0x1:
-			switch (funct7) { 
+			switch (funct7) {
 			case 0x00: regs[rd] = ASU64(ASI32(warppingShl(ASU32(regs[rs1]), shamt))); break;		// sllw
 			default: printExecuteError(opcode, funct3, funct7);
 			} break;
 		case 0x5:
 			switch (funct7) {
 			case 0x00: regs[rd] = ASU64(ASI32(warppingShr(ASU32(regs[rs1]), shamt))); break;		// srlw
-			case 0x20: regs[rd] = ASU64( ASI32(regs[rs1]) >>  ASI32(shamt) ); break;				// sraw
+			case 0x20: regs[rd] = ASU64(ASI32(regs[rs1]) >> ASI32(shamt)); break;				// sraw
 			default: printExecuteError(opcode, funct3, funct7);
 			} break;
 		default: printExecuteError(opcode, funct3, funct7);
@@ -245,7 +245,7 @@ void Cpu::execute(uint32_t inst)
 		switch (funct3) {
 		case 0x0: // beq
 			if (regs[rs1] == regs[rs2])
-				pc = warppingSub(warppingAdd(pc, imm), 4); 
+				pc = warppingSub(warppingAdd(pc, imm), 4);
 			break;
 		case 0x1: // bne
 			if (regs[rs1] != regs[rs2])
@@ -290,9 +290,54 @@ void Cpu::execute(uint32_t inst)
 			| ((inst >> 9) & 0x800) // imm[11]
 			| ((inst >> 20) & 0x7fe); // imm[10:1]
 
-		pc = warppingSub(warppingAdd(pc,imm),4);
+		pc = warppingSub(warppingAdd(pc, imm), 4);
 	}
 	break;
+	case 0x73:	//CSRS  //..................................................................
+	{
+		uint64_t csr_addr = ASU64((inst & 0xfff00000) >> 20);
+		switch (funct3) {
+		case 0x1: // csrrw
+		{
+			auto t = load_csr(csr_addr);
+			store_csr(csr_addr, regs[rs1]);
+			regs[rd] = t;
+		} break;
+		case 0x2: // csrrs
+		{
+			auto t = load_csr(csr_addr);
+			store_csr(csr_addr, t | regs[rs1]);
+			regs[rd] = t;
+		} break;
+		case 0x3: // csrrc
+		{
+			auto t = load_csr(csr_addr);
+			store_csr(csr_addr, t & (!regs[rs1]));
+			regs[rd] = t;
+		}
+		case 0x5: // csrrwi
+		{
+			auto zimm = ASU64(rs1);
+			regs[rd] = load_csr(csr_addr);
+			store_csr(csr_addr, zimm);
+		}
+		case 0x6: // csrrsi
+		{
+			auto zimm = ASU64(rs1);
+			auto t = load_csr(csr_addr);
+			store_csr(csr_addr, t | zimm);
+			regs[rd] = t;
+		}
+		case 0x7: // csrrci
+		{
+			auto zimm = ASU64(rs1);
+			auto t = load_csr(csr_addr);
+			store_csr(csr_addr, t & (!zimm));
+			regs[rd] = t;
+		}
+		default: printExecuteError(opcode, funct3, funct7);
+		}
+	}
 	default: printExecuteError(opcode, funct3, funct7);
 	}
 
@@ -336,7 +381,7 @@ void Cpu::printInstruction(uint32_t inst) const
 			{
 				if (i.funct7 == (uint8_t)-1 || i.funct7 == funct7)
 				{
-					std::cout << i.name << 
+					std::cout << i.name <<
 						" rd=0x" << std::hex << ASU32(rd) << " (" << RegisterNames[rd] << ") " <<
 						" rs1=0x" << std::hex << ASU32(rs1) << " (" << RegisterNames[rs1] << ") " <<
 						" rs2=0x" << std::hex << ASU32(rs2) << " (" << RegisterNames[rs2] << ") " << std::endl;
