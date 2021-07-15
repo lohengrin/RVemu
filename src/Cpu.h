@@ -17,6 +17,9 @@ public:
 	//! Cpu functions
 	uint64_t load(uint64_t addr, uint8_t size) const;
 	void store(uint64_t addr, uint8_t size, uint64_t value);
+	uint64_t load_csr(uint64_t addr) const;
+	void store_csr(uint64_t addr, uint64_t value);
+
 	uint32_t fetch() const;
 	void execute(uint32_t inst);
 
@@ -41,7 +44,14 @@ protected:
 	uint32_t warppingShl(uint32_t a, uint64_t b) const { return a << b; }
 	int64_t warppingShl(int64_t a, uint64_t b) const { return a << b; }
 
+	void printExecuteError(uint8_t opcode, uint8_t funct3, uint8_t funct7) const;
+	
+
+
 	//! internals
+	//! Registers
 	uint64_t	regs[32];
-	Bus&		bus;
+	//! Control and Status registers
+	uint64_t	csrs[4096];
+	Bus& bus;
 };
