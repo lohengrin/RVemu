@@ -25,7 +25,8 @@ public:
 
 
 	//! Utility
-	void printRegisters();
+	void printRegisters() const;
+	void printCsrs() const;
 	void printInstruction(uint32_t inst) const;
 	void printStack() const;
 

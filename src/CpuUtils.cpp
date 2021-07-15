@@ -52,7 +52,13 @@ std::vector<Instruction> InstructionSet =
 	{0x63,0x6,(uint8_t)-1,"bltu"},
 	{0x63,0x7,(uint8_t)-1,"bgeu"},
 	{0x67,(uint8_t)-1,(uint8_t)-1,"jalr"},
-	{0x6f,(uint8_t)-1,(uint8_t)-1,"jal"}
+	{0x6f,(uint8_t)-1,(uint8_t)-1,"jal"},
+	{0x73,0x1,(uint8_t)-1,"csrrw"},
+	{0x73,0x2,(uint8_t)-1,"csrrs"},
+	{0x73,0x3,(uint8_t)-1,"csrrc"},
+	{0x73,0x5,(uint8_t)-1,"csrrwi"},
+	{0x73,0x6,(uint8_t)-1,"csrrsi"},
+	{0x73,0x7,(uint8_t)-1,"csrrci"},
 };
 
 std::vector<std::string> RegisterNames =

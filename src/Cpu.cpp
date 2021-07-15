@@ -352,7 +352,7 @@ void Cpu::printExecuteError(uint8_t opcode, uint8_t funct3, uint8_t funct7) cons
 }
 
 //---------------------------------------------------------
-void Cpu::printRegisters()
+void Cpu::printRegisters() const
 {
 	for (int i = 0; i < 32; i++)
 	{
@@ -361,6 +361,22 @@ void Cpu::printRegisters()
 			std::cout << std::endl;
 	}
 	std::cout << std::endl;
+}
+
+//---------------------------------------------------------
+void Cpu::printCsrs() const
+{
+	std::cout << "==== CSRS ========================================" << std::endl;
+	std::cout << "mstatus=0x" << std::hex << std::setw(16) << load_csr(MSTATUS)
+		<< "\tmtvec=0x" << std::hex << std::setw(16) << load_csr(MTVEC)
+		<< "\tmepc=0x" << std::hex << std::setw(16) << load_csr(MEPC)
+		<< "\tmcause=0x" << std::hex << std::setw(16) << load_csr(MCAUSE) << std::endl;
+
+	std::cout << "sstatus=0x" << std::hex << std::setw(16) << load_csr(SSTATUS)
+		<< "\tstvec=0x" << std::hex << std::setw(16) << load_csr(STVEC)
+		<< "\tsepc=0x" << std::hex << std::setw(16) << load_csr(SEPC)
+		<< "\tscause=0x" << std::hex << std::setw(16) << load_csr(SCAUSE) << std::endl;
+	std::cout << "==================================================" << std::endl;
 }
 
 //---------------------------------------------------------
