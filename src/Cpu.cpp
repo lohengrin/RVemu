@@ -314,30 +314,30 @@ void Cpu::execute(uint32_t inst)
 			auto t = load_csr(csr_addr);
 			store_csr(csr_addr, t & (!regs[rs1]));
 			regs[rd] = t;
-		}
+		} break;
 		case 0x5: // csrrwi
 		{
 			auto zimm = ASU64(rs1);
 			regs[rd] = load_csr(csr_addr);
 			store_csr(csr_addr, zimm);
-		}
+		} break;
 		case 0x6: // csrrsi
 		{
 			auto zimm = ASU64(rs1);
 			auto t = load_csr(csr_addr);
 			store_csr(csr_addr, t | zimm);
 			regs[rd] = t;
-		}
+		} break;
 		case 0x7: // csrrci
 		{
 			auto zimm = ASU64(rs1);
 			auto t = load_csr(csr_addr);
 			store_csr(csr_addr, t & (!zimm));
 			regs[rd] = t;
-		}
+		} break;
 		default: printExecuteError(opcode, funct3, funct7);
 		}
-	}
+	} break;
 	default: printExecuteError(opcode, funct3, funct7);
 	}
 
@@ -348,7 +348,7 @@ void Cpu::execute(uint32_t inst)
 //---------------------------------------------------------
 void Cpu::printExecuteError(uint8_t opcode, uint8_t funct3, uint8_t funct7) const
 {
-	std::cerr << "Cpu::execute not yet implemented: opcode 0x" << std::hex << opcode << " funct3 0x" << std::hex << funct3 << " funct7 0x" << std::hex << funct7 << std::endl;
+	std::cerr << "Cpu::execute not yet implemented: opcode 0x" << std::hex << (int)opcode << " funct3 0x" << std::hex << (int)funct3 << " funct7 0x" << std::hex << (int)funct7 << std::endl;
 }
 
 //---------------------------------------------------------
