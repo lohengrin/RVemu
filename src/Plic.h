@@ -16,6 +16,9 @@ const uint64_t PLIC_SPRIORITY = 0x201000;
 /// The address of the claim/complete registers for S-mode.
 const uint64_t PLIC_SCLAIM = 0x201004;
 
+/// The size of PLIC.
+const uint64_t PLIC_SIZE = 0x4000000;
+
 /// The platform-level-interrupt controller (PLIC).
 struct Plic : public Device
 {
@@ -28,6 +31,8 @@ public:
     uint64_t load(uint64_t addr, uint8_t size) const;
     //! store
     void store(uint64_t addr, uint8_t size, uint64_t value);
+    //! Get address space size of device
+    uint64_t size() const { return PLIC_SIZE; }
 
 protected:
     uint64_t load32(uint64_t addr) const;

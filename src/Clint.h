@@ -13,6 +13,9 @@ const uint64_t CLINT_MTIMECMP = 0x4000;
 /// constant frequency.
 const uint64_t CLINT_MTIME = 0xbff8;
 
+/// The size of CLINT.
+const uint64_t CLINT_SIZE = 0x10000;
+
 /// The core-local interruptor (CLINT).
 struct Clint : public Device
 {
@@ -25,6 +28,8 @@ public:
     uint64_t load(uint64_t addr, uint8_t size) const;
     //! store
     void store(uint64_t addr, uint8_t size, uint64_t value);
+    //! Get address space size of device
+    uint64_t size() const { return CLINT_SIZE; }
 
 protected:
     uint64_t load64(uint64_t addr) const;

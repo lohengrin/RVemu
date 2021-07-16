@@ -19,6 +19,8 @@ public:
 	uint64_t load(uint64_t addr, uint8_t size) const;
 	//! store
 	void store(uint64_t addr, uint8_t size, uint64_t value);
+	//! Get address space size of device
+	uint64_t size() const {	return dram.size(); }
 
 	//! Preload memory
 	void preload(size_t addr, uint8_t* data, size_t size);
