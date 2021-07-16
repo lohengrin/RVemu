@@ -54,13 +54,13 @@ protected:
     mutable std::vector<uint8_t> uart;
 
     // Uart thread stuff
-    volatile std::atomic<bool> quitThread;
+    std::atomic<bool> quitThread;
     std::thread uartThread;
     void threadFunc();
     mutable std::mutex uartMutex;
 
     /// Bit if an interrupt happens.
-    volatile std::atomic<bool> interrupting;
+    std::atomic<bool> interrupting;
 };
 
 
