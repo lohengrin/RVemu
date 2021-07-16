@@ -35,4 +35,5 @@
 CMakeSettings.json
 out
 bin
+rust
 
