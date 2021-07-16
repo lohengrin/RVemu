@@ -1,5 +1,22 @@
 
-set(SOURCE_FILES main.cpp "Cpu.h" "Cpu.cpp" "Memory.h" "Memory.cpp" "Bus.h" "Bus.cpp"  "Defines.h" "CpuUtils.cpp" "Trap.h" "Trap.cpp" "Device.h")
+set(SOURCE_FILES 
+	Defines.h
+	Device.h
+	Cpu.h
+	Cpu.cpp
+	CpuUtils.cpp
+	Memory.h
+	Memory.cpp
+	Bus.h
+	Bus.cpp
+	Trap.h
+	Trap.cpp
+	Plic.h
+	Plic.cpp
+	Clint.h
+	Clint.cpp
+	main.cpp
+)
 
 add_executable(RVemu ${SOURCE_FILES})
 

@@ -66,8 +66,8 @@ int main(int argc, const char *argv[])
             // 3. Decode.
 
             // 4. Execute.
-            cpu.printInstruction(inst);
-            cpu.printCsrs();
+            //cpu.printInstruction(inst);
+            //cpu.printCsrs();
             //cpu.printStack();
             cpu.execute(inst);
         }

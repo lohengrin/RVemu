@@ -7,7 +7,6 @@
 
 // Default is 128MiB
 const size_t DEFAULT_MEMORYSIZE = 1024 * 1024 * 128;
-const uint64_t DRAM_BASE = 0x80000000;
 
 class Memory : public Device {
 public:
