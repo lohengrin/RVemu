@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Device.h"
+
 #include <vector>
 #include <stdint.h>
 
@@ -7,11 +9,17 @@
 const size_t DEFAULT_MEMORYSIZE = 1024 * 1024 * 128;
 const uint64_t DRAM_BASE = 0x80000000;
 
-class Memory {
+class Memory : public Device {
 public:
 	//! Init
 	Memory(size_t size = DEFAULT_MEMORYSIZE);
 	virtual ~Memory();
+
+	//! Device Interface
+	//!load
+	uint64_t load(uint64_t addr, uint8_t size) const;
+	//! store
+	void store(uint64_t addr, uint8_t size, uint64_t value);
 
 	//! Preload memory
 	void preload(size_t addr, uint8_t* data, size_t size);
@@ -19,11 +27,6 @@ public:
 	//! Get base memory adress
 	const uint8_t* base() const { return &(dram[0]); }
 
-	//!load
-	uint64_t load(uint64_t addr, uint8_t size) const;
-
-	//! store
-	void store(uint64_t addr, uint8_t size, uint64_t value);
 
 protected:
 	uint64_t load8(uint64_t addr) const;

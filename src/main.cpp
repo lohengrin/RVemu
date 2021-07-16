@@ -1,6 +1,7 @@
 #include "Cpu.h"
 #include "Memory.h"
 #include "Bus.h"
+#include "Trap.h"
 
 #include <iostream>
 #include <iomanip>
@@ -48,30 +49,38 @@ int main(int argc, const char *argv[])
     }
 
     // Run program
-    uint32_t inst = 0;
-    while(cpu.pc != 0)
-    {
-        // 1. Fetch.
-        inst = cpu.fetch();
-        if (inst == 0)
-            break;
+    try {
+        uint32_t inst = 0;
+        while(cpu.pc != 0)
+        {
+            // 1. Fetch.
+                inst = cpu.fetch();
+                if (inst == 0)
+                    break;
 
-        //std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(16) << cpu.pc << std::endl;
+            //std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(16) << cpu.pc << std::endl;
 
-        // 2. Add 4 to the program counter.
-        cpu.pc = cpu.pc + 4;
+            // 2. Add 4 to the program counter.
+            cpu.pc = cpu.pc + 4;
 
-        // 3. Decode.
+            // 3. Decode.
 
-        // 4. Execute.
-        cpu.printInstruction(inst);
-        cpu.printCsrs();
-        //cpu.printStack();
-        cpu.execute(inst);
+            // 4. Execute.
+            cpu.printInstruction(inst);
+            cpu.printCsrs();
+            //cpu.printStack();
+            cpu.execute(inst);
+        }
+        std::cout << "Normal End of program" << std::endl;
+        cpu.printRegisters();
     }
-    std::cout << "End of program" << std::endl;
+    catch (const CpuFatal& e)
+    {
+        std::cerr << "Fatal Error: " << e.what() << std::endl;
+        cpu.printRegisters();
+        return 1;
+    }
 
-    cpu.printRegisters();
 
 
 	return 0;

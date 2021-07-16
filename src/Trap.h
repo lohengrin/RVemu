@@ -2,7 +2,7 @@
 
 #include "Cpu.h"
 
-#include <exception>
+#include <stdexcept>
 #include <inttypes.h>
 
 enum class Except : uint32_t {
@@ -27,12 +27,14 @@ struct Trap {
 	static void take_trap(Except e, Cpu* cpu);
 };
 
+struct CpuFatal : public std::runtime_error
+{
+	CpuFatal(const std::string& msg) : std::runtime_error(msg) {}
+};
+
 struct CpuException : public std::exception
 {
-	CpuException(Except e, Cpu* cpu) : ex(e)
-	{
-		Trap::take_trap(e, cpu);
-	}
+	CpuException(Except e) : ex(e) {}
 	const char* what() const throw ()
 	{
 		switch (ex) {
@@ -53,6 +55,8 @@ struct CpuException : public std::exception
 		default: return "Unkown Cpu Exception";
 		}
 	}
+
+	void take_trap(Cpu* cpu) const { Trap::take_trap(ex, cpu); }
 
 	bool is_fatal() const {
 		return (ex == Except::InstructionAddressMisaligned ||

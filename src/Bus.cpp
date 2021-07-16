@@ -6,16 +6,16 @@
 uint64_t Bus::load(uint64_t addr, uint8_t size) const
 {
 	if (DRAM_BASE <= addr)
-		return mem.load(addr, size);
+		return mem.load(addr-DRAM_BASE, size);
 
-	std::cerr << "Bus::load: Invalid address" << std::endl;
+	throw(CpuException(Except::LoadAccessFault));
 	return 0;
 }
 
 void Bus::store(uint64_t addr, uint8_t size, uint64_t value)
 {
 	if (DRAM_BASE <= addr)
-		mem.store(addr, size, value);
+		mem.store(addr - DRAM_BASE, size, value);
 	else
-		std::cerr << "Bus::store: Invalid address" << std::endl;
+		throw(CpuException(Except::StoreAMOAccessFault));
 }

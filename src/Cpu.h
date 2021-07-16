@@ -22,7 +22,7 @@ public:
 	virtual ~Cpu();
 
 	//! Cpu functions
-	uint64_t load(uint64_t addr, uint8_t size) const;
+	uint64_t load(uint64_t addr, uint8_t size);
 	void store(uint64_t addr, uint8_t size, uint64_t value);
 	uint64_t load_csr(uint64_t addr) const;
 	void store_csr(uint64_t addr, uint64_t value);
@@ -35,7 +35,7 @@ public:
 	void printRegisters() const;
 	void printCsrs() const;
 	void printInstruction(uint32_t inst) const;
-	void printStack() const;
+	void printStack();
 
 	uint64_t	pc;
 
@@ -54,9 +54,8 @@ protected:
 	uint64_t warppingDiv(uint64_t a, uint64_t b) const { return a / b; }
 	uint32_t warppingRem(uint32_t a, uint32_t b) const { return a % b; }
 
-	void printExecuteError(uint8_t opcode, uint8_t funct3, uint8_t funct7) const;
-	
 
+	void executeError(uint8_t opcode, uint8_t funct3, uint8_t funct7) const;
 
 	//! internals
 	//! Registers
