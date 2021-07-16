@@ -62,12 +62,12 @@ uint32_t Cpu::fetch() const
 //---------------------------------------------------------
 void Cpu::execute(uint32_t inst)
 {
-	uint8_t opcode = inst & 0x7f;
-	uint8_t rd = (inst >> 7) & 0x1f;
-	uint8_t rs1 = (inst >> 15) & 0x1f;
-	uint8_t rs2 = (inst >> 20) & 0x1f;
-	uint8_t funct3 = (inst >> 12) & 0x7;
-	uint8_t funct7 = (inst >> 25) & 0x7f;
+	uint8_t opcode = inst & 0x0000007f;
+	uint8_t rd = (inst & 0x00000f80) >> 7;
+	uint8_t rs1 = (inst & 0x000f8000) >> 15;
+	uint8_t rs2 = (inst & 0x01f00000) >> 20;
+	uint8_t funct3 = (inst & 0x00007000) >> 12;
+	uint8_t funct7 = (inst & 0xfe000000) >> 25;
 
 	// Emulate that register x0 is hardwired with all bits equal to 0.
 	regs[0] = 0;
@@ -151,8 +151,42 @@ void Cpu::execute(uint32_t inst)
 		case 0x3: store(addr, 64, regs[rs2]); break;	// sd
 		default: printExecuteError(opcode, funct3, funct7);
 		};
-	}
-	break;
+	} break;
+	case 0x2f: //..................................................................
+	{
+		// RV64A: "A" standard extension for atomic instructions
+		uint8_t funct5 = (funct7 & 0b1111100) >> 2;
+		uint8_t _aq = (funct7 & 0b0000010) >> 1; // acquire access
+		uint8_t _rl = funct7 & 0b0000001; // release access
+		if (funct3 == 0x02 && funct5 == 0x00) {
+			// amoadd.w
+			uint64_t t = load(regs[rs1], 32);
+			store(regs[rs1], 32, warppingAdd(t,regs[rs2]));
+			regs[rd] = t;
+		}
+		else if (funct3 == 0x3 && funct5 == 0x00) {
+			// amoadd.d
+			uint64_t t = load(regs[rs1], 64);
+			store(regs[rs1], 64, warppingAdd(t, regs[rs2]));
+			regs[rd] = t;
+		}
+		else if (funct3 == 0x2 && funct5 == 0x01) {
+			// amoswap.w
+			uint64_t t = load(regs[rs1], 32);
+			store(regs[rs1], 32, regs[rs2]);
+			regs[rd] = t;
+		}
+		else if (funct3 == 0x3 && funct5 == 0x01) {
+			// amoswap.d
+			uint64_t t = load(regs[rs1], 64);
+			store(regs[rs1], 64, regs[rs2]);
+			regs[rd] = t;
+		}
+		else
+		{
+			printExecuteError(opcode, funct3, funct7);
+		}
+	} break;
 	case 0x33: //..................................................................
 	{
 		// "SLL, SRL, and SRA perform logical left, logical right, and arithmetic right
@@ -228,7 +262,13 @@ void Cpu::execute(uint32_t inst)
 		case 0x5:
 			switch (funct7) {
 			case 0x00: regs[rd] = ASU64(ASI32(warppingShr(ASU32(regs[rs1]), shamt))); break;		// srlw
+			case 0x01: regs[rd] = (regs[rs2] == 0)? 0xffffffffffffffff: warppingDiv(regs[rs1], regs[rs2]); break;		// divu      // TODO: Set DZ (Divide by Zero) in the FCSR csr flag to 1.
 			case 0x20: regs[rd] = ASU64(ASI32(regs[rs1]) >> ASI32(shamt)); break;				// sraw
+			default: printExecuteError(opcode, funct3, funct7);
+			} break;
+		case 0x7:
+			switch (funct7) {
+			case 0x01: regs[rd] = (regs[rs2] == 0) ? regs[rs1] : warppingRem(ASU32(regs[rs1]), ASU32(regs[rs2])); break;		// remuw
 			default: printExecuteError(opcode, funct3, funct7);
 			} break;
 		default: printExecuteError(opcode, funct3, funct7);
@@ -446,12 +486,12 @@ void Cpu::printCsrs() const
 //---------------------------------------------------------
 void Cpu::printInstruction(uint32_t inst) const
 {
-	uint8_t opcode = inst & 0x7f;
-	uint8_t rd = (inst >> 7) & 0x1f;
-	uint8_t rs1 = (inst >> 15) & 0x1f;
-	uint8_t rs2 = (inst >> 20) & 0x1f;
-	auto funct3 = (inst >> 12) & 0x7;
-	auto funct7 = (inst >> 25) & 0x7f;
+	uint8_t opcode = inst & 0x0000007f;
+	uint8_t rd = (inst & 0x00000f80) >> 7;
+	uint8_t rs1 = (inst & 0x000f8000) >> 15;
+	uint8_t rs2 = (inst & 0x01f00000) >> 20;
+	uint8_t funct3 = (inst & 0x00007000) >> 12;
+	uint8_t funct7 = (inst & 0xfe000000) >> 25;
 
 	for (const auto& i : InstructionSet)
 	{

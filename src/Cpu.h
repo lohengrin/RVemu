@@ -50,6 +50,8 @@ protected:
 	uint64_t warppingShl(uint64_t a, uint64_t b) const { return a << b; }
 	uint32_t warppingShl(uint32_t a, uint64_t b) const { return a << b; }
 	int64_t warppingShl(int64_t a, uint64_t b) const { return a << b; }
+	uint64_t warppingDiv(uint64_t a, uint64_t b) const { return a / b; }
+	uint32_t warppingRem(uint32_t a, uint32_t b) const { return a % b; }
 
 	void printExecuteError(uint8_t opcode, uint8_t funct3, uint8_t funct7) const;
 	
