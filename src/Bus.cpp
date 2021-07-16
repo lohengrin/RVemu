@@ -1,4 +1,5 @@
 #include "Bus.h"
+#include "Trap.h"
 
 #include <iostream>
 

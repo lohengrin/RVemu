@@ -9,6 +9,7 @@
 #define REGSP 2
 
 class Cpu {
+	friend struct Trap;
 public:
 	enum class Mode {
 		User = 0x00,
