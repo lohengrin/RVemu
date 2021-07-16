@@ -22,10 +22,10 @@ set(SOURCE_FILES
 
 add_executable(RVemu ${SOURCE_FILES})
 
-IF(WIN32)
+IF(NOT WIN32)
 target_link_libraries(RVemu
-	Ws2_32.lib
+	pthread
 )
-ENDIF(WIN32)
+ENDIF()
 
 install(TARGETS RVemu DESTINATION ${RVEMU_INSTALL_BIN_DIR})
