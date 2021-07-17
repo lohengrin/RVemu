@@ -51,26 +51,31 @@ int main(int argc, const char *argv[])
     // Run program
     try {
         uint32_t inst = 0;
-        while(cpu.pc != 0)
+        while(cpu.getPC() != 0)
         {
             // 1. Fetch.
-                inst = cpu.fetch();
-                if (inst == 0)
-                    break;
+            inst = cpu.fetch();
+            if (inst == 0)
+                break;
 
             //std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(16) << cpu.pc << std::endl;
 
             // 2. Add 4 to the program counter.
-            cpu.pc = cpu.pc + 4;
+            cpu.forwardPC();
 
             // 3. Decode.
+            uint8_t opcode, rd, rs1, rs2, funct3, funct7;
+            cpu.decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
-            // 4. Execute.
-            //cpu.printInstruction(inst);
+            // Debug
+            //cpu.printInstruction(inst, opcode, rd, rs1, rs2, funct3, funct7);
             //cpu.printCsrs();
             //cpu.printStack();
-            cpu.execute(inst);
+
+            // 4. Execute.
+            cpu.execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
         }
+
         std::cout << "Normal End of program" << std::endl;
         cpu.printRegisters();
     }

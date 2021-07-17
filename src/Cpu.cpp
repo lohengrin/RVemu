@@ -78,15 +78,20 @@ uint32_t Cpu::fetch() const
 }
 
 //---------------------------------------------------------
-void Cpu::execute(uint32_t inst)
+void Cpu::decode(uint32_t inst, uint8_t& opcode, uint8_t& rd, uint8_t& rs1, uint8_t& rs2, uint8_t& funct3, uint8_t& funct7) const
 {
-	uint8_t opcode = inst & 0x0000007f;
-	uint8_t rd = (inst & 0x00000f80) >> 7;
-	uint8_t rs1 = (inst & 0x000f8000) >> 15;
-	uint8_t rs2 = (inst & 0x01f00000) >> 20;
-	uint8_t funct3 = (inst & 0x00007000) >> 12;
-	uint8_t funct7 = (inst & 0xfe000000) >> 25;
+	opcode = inst & 0x0000007f;
+	rd = (inst & 0x00000f80) >> 7;
+	rs1 = (inst & 0x000f8000) >> 15;
+	rs2 = (inst & 0x01f00000) >> 20;
+	funct3 = (inst & 0x00007000) >> 12;
+	funct7 = (inst & 0xfe000000) >> 25;
+}
 
+
+//---------------------------------------------------------
+void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7)
+{
 	// Emulate that register x0 is hardwired with all bits equal to 0.
 	regs[0] = 0;
 
@@ -544,15 +549,8 @@ void Cpu::printCsrs() const
 }
 
 //---------------------------------------------------------
-void Cpu::printInstruction(uint32_t inst) const
+void Cpu::printInstruction(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7) const
 {
-	uint8_t opcode = inst & 0x0000007f;
-	uint8_t rd = (inst & 0x00000f80) >> 7;
-	uint8_t rs1 = (inst & 0x000f8000) >> 15;
-	uint8_t rs2 = (inst & 0x01f00000) >> 20;
-	uint8_t funct3 = (inst & 0x00007000) >> 12;
-	uint8_t funct7 = (inst & 0xfe000000) >> 25;
-
 	for (const auto& i : InstructionSet)
 	{
 		if (opcode == i.opcode)
