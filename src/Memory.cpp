@@ -2,6 +2,7 @@
 #include "Trap.h"
 
 #include <iostream>
+#include <string.h>
 
 Memory::Memory(size_t size):
 	dram(size, 0x0)
