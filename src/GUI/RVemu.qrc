@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="GUI">
+    <file>icons/RISC-V-logo-square.svg.png</file>
+    <file>icons/icons8-repeter-80.png</file>
+    <file>icons/icons8-arreter-80.png</file>
+    <file>icons/icons8-dossier-ouvert-80.png</file>
+    <file>icons/icons8-jouer-80.png</file>
+    <file>icons/icons8-pause-80.png</file>
+    <file>icons/icons8-reprendre-la-lecture-80.png</file>
+  </qresource>
+</RCC>

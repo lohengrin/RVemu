@@ -9,8 +9,8 @@
 
 //---------------------------------------------------------
 Cpu::Cpu(Bus& b) :
-	regs{ 0 },
-	csrs{ 0 },
+	regs(32,0),
+	csrs(4096,0),
 	mode(Mode::Machine),
 	pc(DRAM_BASE),
 	bus(b)
@@ -22,6 +22,19 @@ Cpu::Cpu(Bus& b) :
 Cpu::~Cpu()
 {
 }
+
+//---------------------------------------------------------
+uint64_t Cpu::readMem(uint64_t addr, uint8_t size) const
+{
+	try {
+		return bus.load(addr, size);
+	}
+	catch (...)
+	{
+		return 0;
+	}
+}
+
 
 //---------------------------------------------------------
 uint64_t Cpu::load(uint64_t addr, uint8_t size)
@@ -520,63 +533,3 @@ void Cpu::executeError(uint8_t opcode, uint8_t funct3, uint8_t funct7) const
 	throw CpuException(Except::IllegalInstruction);
 }
 
-//---------------------------------------------------------
-void Cpu::printRegisters() const
-{
-	for (int i = 0; i < 32; i++)
-	{
-		std::cout << std::setfill('0') << std::setw(2) << std::dec << i << ": " << RegisterNames[i] << ": " << std::hex << "0x" << std::setw(16) << regs[i] << "\t";
-		if ((i + 1) % 5 == 0)
-			std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
-
-//---------------------------------------------------------
-void Cpu::printCsrs() const
-{
-	std::cout << "==== CSRS ========================================" << std::endl;
-	std::cout << "mstatus=0x" << std::hex << std::setw(16) << load_csr(MSTATUS)
-		<< "\tmtvec=0x" << std::hex << std::setw(16) << load_csr(MTVEC)
-		<< "\tmepc=0x" << std::hex << std::setw(16) << load_csr(MEPC)
-		<< "\tmcause=0x" << std::hex << std::setw(16) << load_csr(MCAUSE) << std::endl;
-
-	std::cout << "sstatus=0x" << std::hex << std::setw(16) << load_csr(SSTATUS)
-		<< "\tstvec=0x" << std::hex << std::setw(16) << load_csr(STVEC)
-		<< "\tsepc=0x" << std::hex << std::setw(16) << load_csr(SEPC)
-		<< "\tscause=0x" << std::hex << std::setw(16) << load_csr(SCAUSE) << std::endl;
-	std::cout << "==================================================" << std::endl;
-}
-
-//---------------------------------------------------------
-void Cpu::printInstruction(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7) const
-{
-	for (const auto& i : InstructionSet)
-	{
-		if (opcode == i.opcode)
-		{
-			if (i.funct3 == (uint8_t)-1 || i.funct3 == funct3)
-			{
-				if (i.funct7 == (uint8_t)-1 || i.funct7 == funct7)
-				{
-					std::cout << i.name <<
-						" rd=0x" << std::hex << ASU32(rd) << " (" << RegisterNames[rd] << ") " <<
-						" rs1=0x" << std::hex << ASU32(rs1) << " (" << RegisterNames[rs1] << ") " <<
-						" rs2=0x" << std::hex << ASU32(rs2) << " (" << RegisterNames[rs2] << ") " << std::endl;
-				}
-			}
-		}
-	}
-}
-
-//---------------------------------------------------------
-void Cpu::printStack()
-{
-	std::cout << "==== Stack ====" << std::endl;
-	for (uint64_t sp = regs[REGSP]; sp < DRAM_BASE + DEFAULT_MEMORYSIZE; sp += 8)
-	{
-		std::cout << std::hex << "0x" << std::setfill('0') << std::setw(16) << sp
-			<< std::hex << "   0x" << std::setfill('0') << std::setw(16) << load(sp, 64) << std::endl;
-	}
-	std::cout << "===============" << std::endl;
-}

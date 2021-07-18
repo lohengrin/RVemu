@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string.h>
+#include <fstream>
 
 Memory::Memory(size_t size):
 	dram(size, 0x0)
@@ -14,9 +15,21 @@ Memory::~Memory()
 }
 
 //! Preload memory
-void Memory::preload(size_t addr, uint8_t* data, size_t size)
+bool Memory::preload(const std::string& file)
 {
-	memcpy(&dram[0], data, std::min(size, dram.size() - addr));
+    // Load program
+    std::ifstream program(file, std::ios::in | std::ios::binary | std::ios::ate);
+    if (!program.is_open())
+    {
+        std::cerr << "Unable to read: " << file << std::endl;
+        return false;
+    }
+
+    size_t fsize = program.tellg();
+    program.seekg(0, std::ios::beg);
+    program.read((char*) &dram[0], std::min(fsize, dram.size()));
+
+    return true;
 }
 
 /// Load bytes from the little-endiam dram.

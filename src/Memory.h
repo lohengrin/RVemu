@@ -22,8 +22,8 @@ public:
 	//! Get address space size of device
 	uint64_t size() const {	return dram.size(); }
 
-	//! Preload memory
-	void preload(size_t addr, uint8_t* data, size_t size);
+	//! Preload memory with given program
+	bool preload(const std::string& file);
 
 	//! Get base memory adress
 	const uint8_t* base() const { return &(dram[0]); }

@@ -26,14 +26,17 @@ public:
 	void decode(uint32_t inst, uint8_t& opcode, uint8_t& rd, uint8_t& rs1, uint8_t& rs2, uint8_t& funct3, uint8_t& funct7) const;
 	void execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7);
 	void forwardPC() { pc += 4; }
-	uint64_t getPC() { return pc; }
 
 
 	//! Utility
-	void printRegisters() const;
-	void printCsrs() const;
-	void printInstruction(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7) const;
-	void printStack();
+	uint64_t getPC() const { return pc; }
+	uint64_t getRegister(size_t i) const { return regs[i]; }
+	uint64_t getCsr(size_t i) const { return load_csr(i); }
+	uint64_t readMem(uint64_t addr, uint8_t size) const;
+
+	//! Inspection for GUI
+	const std::vector<uint64_t>& getRegs() const { return regs; }
+	const std::vector<uint64_t>& getCsrs() const { return csrs; }
 
 protected:
 	//! Cpu functions
@@ -41,6 +44,7 @@ protected:
 	void store(uint64_t addr, uint8_t size, uint64_t value);
 	uint64_t load_csr(uint64_t addr) const;
 	void store_csr(uint64_t addr, uint64_t value);
+
 
 	uint64_t warppingAdd(uint64_t a, uint64_t b) const { return a + b; }
 	uint64_t warppingAdd(uint64_t a, int64_t b) const { return a + b; }
@@ -61,9 +65,9 @@ protected:
 
 	//! internals
 	//! Registers
-	uint64_t	regs[32];
+	std::vector<uint64_t>	regs;
 	//! Control and Status registers
-	uint64_t	csrs[4096];
+	std::vector <uint64_t>	csrs;
 	//! Current mode
 	Mode		mode;
 	//! program counter

@@ -1,4 +1,16 @@
 
+IF(WITH_GUI)
+	set(GUI_FILES
+	 GUI/MainWindow.cpp
+	 GUI/MainWindow.h
+	 GUI/MainWindow.ui
+	 GUI/RVemu.qrc
+	  "GUI/ComputerThread.h" "GUI/ComputerThread.cpp")
+	SET(MAIN_FILE GUI/mainGUI.cpp)
+ELSE(WITH_GUI)
+	SET(MAIN_FILE main.cpp)
+ENDIF(WITH_GUI)
+
 set(SOURCE_FILES 
 	Defines.h
 	Device.h
@@ -17,15 +29,22 @@ set(SOURCE_FILES
 	Clint.cpp
 	Uart.h
 	Uart.cpp
-	main.cpp
- )
+)
 
-add_executable(RVemu ${SOURCE_FILES})
+add_executable(RVemu 
+${SOURCE_FILES}
+${GUI_FILES}
+${MAIN_FILE}
+)
 
 IF(NOT WIN32)
-target_link_libraries(RVemu
-	pthread
-)
-ENDIF()
+	target_link_libraries(RVemu	pthread)
+ENDIF(NOT WIN32)
 
-install(TARGETS RVemu DESTINATION ${RVEMU_INSTALL_BIN_DIR})
+IF(WITH_GUI)
+	target_include_directories(RVemu PRIVATE .)
+	target_compile_definitions(RVemu PRIVATE WITH_GUI)
+	target_link_libraries(RVemu	Qt5::Widgets)
+ENDIF(WITH_GUI)
+
+install(TARGETS RVemu DESTINATION ${INSTALL_BIN_DIR})
