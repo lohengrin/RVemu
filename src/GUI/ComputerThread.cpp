@@ -31,8 +31,10 @@ void ComputerThread::updateState(const Cpu* cpu, uint32_t inst, uint8_t opcode, 
 	myState.nextstep.inst = inst;
 	myState.nextstep.opcode = opcode;
 	myState.nextstep.rd = rd;
-	myState.nextstep.rs1 = rs2;
-	myState.nextstep.funct3 = funct7;
+	myState.nextstep.rs1 = rs1;
+	myState.nextstep.rs2 = rs2;
+	myState.nextstep.funct3 = funct3;
+	myState.nextstep.funct7 = funct7;
 
 	myState.stack.clear();
 	for (uint64_t sp = cpu->getRegister(REGSP); sp < DRAM_BASE + DEFAULT_MEMORYSIZE; sp += 8)

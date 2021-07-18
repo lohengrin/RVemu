@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "Defines.h"
 
 #include <QFileDialog>
 
@@ -121,13 +122,36 @@ void MainWindow::stepFinished(CpuState state)
 
     myUi.twRegisters->resizeColumnsToContents();
 
-    myUi.lePC->setText(QStringLiteral("0x%1").arg(state.nextstep.pc, 16, 16, QLatin1Char('0')));
+    QString rdStr = QString::fromStdString(RegisterNames[state.nextstep.rd]);
+    QString rs1Str = QString::fromStdString(RegisterNames[state.nextstep.rs1]);
+    QString rs2Str = QString::fromStdString(RegisterNames[state.nextstep.rs2]);
+
+    QString instStr;
+    for (const auto& i : InstructionSet)
+    {
+        if (state.nextstep.opcode == i.opcode)
+        {
+            if (i.funct3 == (uint8_t)-1 || i.funct3 == state.nextstep.funct3)
+            {
+                if (i.funct7 == (uint8_t)-1 || i.funct7 == state.nextstep.funct7)
+                {
+                    instStr = QString::fromStdString(i.name);
+                }
+            }
+        }
+    }
+
+
+    myUi.lePC->setText(QStringLiteral("0x%1 (%2)").arg(state.nextstep.pc, 16, 16, QLatin1Char('0')).arg(instStr));
     myUi.leOpcode->setText(QStringLiteral("0x%1").arg(state.nextstep.opcode, 2, 16, QLatin1Char('0')));
     myUi.leF3->setText(QStringLiteral("0x%1").arg(state.nextstep.funct3, 2, 16, QLatin1Char('0')));
     myUi.leF7->setText(QStringLiteral("0x%1").arg(state.nextstep.funct7, 2, 16, QLatin1Char('0')));
-    myUi.leRd->setText(QStringLiteral("0x%1").arg(state.nextstep.rd, 2, 16, QLatin1Char('0')));
-    myUi.leRs1->setText(QStringLiteral("0x%1").arg(state.nextstep.rs1, 2, 16, QLatin1Char('0')));
-    myUi.leRs2->setText(QStringLiteral("0x%1").arg(state.nextstep.rs2, 2, 16, QLatin1Char('0')));
+    myUi.leRd->setText(QStringLiteral("0x%1 (%2) [0x%3]").arg(state.nextstep.rd, 2, 16, QLatin1Char('0'))
+        .arg(rdStr).arg(QStringLiteral("0x%1").arg(state.regs[state.nextstep.rd], 16, 16, QLatin1Char('0'))));
+    myUi.leRs1->setText(QStringLiteral("0x%1 (%2) [0x%3]").arg(state.nextstep.rs1, 2, 16, QLatin1Char('0'))
+        .arg(rs1Str).arg(QStringLiteral("0x%1").arg(state.regs[state.nextstep.rs1], 16, 16, QLatin1Char('0'))));
+    myUi.leRs2->setText(QStringLiteral("0x%1 (%2) [0x%3]").arg(state.nextstep.rs2, 2, 16, QLatin1Char('0'))
+        .arg(rs2Str).arg(QStringLiteral("0x%1").arg(state.regs[state.nextstep.rs2], 16, 16, QLatin1Char('0'))));
 }
 
 void MainWindow::programPaused()
