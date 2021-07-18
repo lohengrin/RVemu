@@ -1,9 +1,9 @@
 # RVemu
-A RISC-V Emulator written in C++
+A "Simple" RISC-V Emulator written in C++
+
+WARNING: Work still in progress: Currently at Uart integration
 
 Based on https://book.rvemu.app/index.html
-
-Work still in progress: Currently at step 7 (Uart)
 
 Optionnal Debugging GUI in QT5:
 
