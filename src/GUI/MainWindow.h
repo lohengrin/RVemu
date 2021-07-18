@@ -6,6 +6,8 @@
 
 #include <QMainWindow>
 #include <QActionGroup>
+#include <QComboBox>
+#include <QTimer>
 
 class MainWindow : public QMainWindow
 {
@@ -28,8 +30,12 @@ protected slots:
     void programPaused();
     void programStoped();
 
+    void timerStep() { on_actionStep_triggered(true); }
+
 protected:
     Ui::MainWindow myUi;
     ComputerThread* myComputer;
     QActionGroup *myGroup;
+    QComboBox* mySpeedCB;
+    QTimer* myTimer;
 };

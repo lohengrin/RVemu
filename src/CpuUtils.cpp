@@ -71,3 +71,13 @@ std::vector<std::string> RegisterNames =
 { "zero", " ra ", " sp ", " gp ", " tp ", " t0 ", " t1 ", " t2 ", " s0 ", " s1 ", " a0 ",
 	" a1 ", " a2 ", " a3 ", " a4 ", " a5 ", " a6 ", " a7 ", " s2 ", " s3 ", " s4 ", " s5 ",
 	" s6 ", " s7 ", " s8 ", " s9 ", " s10", " s11", " t3 ", " t4 ", " t5 ", " t6 " };
+
+const char* getInstructionName(uint8_t opcode, uint8_t funct3, uint8_t funct7)
+{
+	for (const auto& i : InstructionSet)
+		if (opcode == i.opcode)
+			if (i.funct3 == (uint8_t)-1 || i.funct3 == funct3)
+				if (i.funct7 == (uint8_t)-1 || i.funct7 == funct7)
+					return i.name.c_str();
+	return "unknown";
+}

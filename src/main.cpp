@@ -44,22 +44,10 @@ void printCsrs(const Cpu* cpu)
 //---------------------------------------------------------
 void printInstruction(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7)
 {
-	for (const auto& i : InstructionSet)
-	{
-		if (opcode == i.opcode)
-		{
-			if (i.funct3 == (uint8_t)-1 || i.funct3 == funct3)
-			{
-				if (i.funct7 == (uint8_t)-1 || i.funct7 == funct7)
-				{
-					std::cout << i.name <<
-						" rd=0x" << std::hex << ASU32(rd) << " (" << RegisterNames[rd] << ") " <<
-						" rs1=0x" << std::hex << ASU32(rs1) << " (" << RegisterNames[rs1] << ") " <<
-						" rs2=0x" << std::hex << ASU32(rs2) << " (" << RegisterNames[rs2] << ") " << std::endl;
-				}
-			}
-		}
-	}
+	std::cout << getInstructionName(opcode, funct3, funct7) <<
+		" rd=0x" << std::hex << ASU32(rd) << " (" << RegisterNames[rd] << ") " <<
+		" rs1=0x" << std::hex << ASU32(rs1) << " (" << RegisterNames[rs1] << ") " <<
+		" rs2=0x" << std::hex << ASU32(rs2) << " (" << RegisterNames[rs2] << ") " << std::endl;
 }
 
 //---------------------------------------------------------

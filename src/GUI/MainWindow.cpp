@@ -20,6 +20,21 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
     myUi.actionStep->setEnabled(false);
     myUi.actionRestart->setEnabled(false);
+
+
+    for (size_t i = 0; i < 32; i++)
+        myUi.twRegisters->setItem(i, 0, new QTableWidgetItem());
+
+    mySpeedCB = new QComboBox(this);
+    mySpeedCB->addItem("Max");
+    mySpeedCB->addItem("1 ms"); mySpeedCB->setItemData(1, 1);
+    mySpeedCB->addItem("10 ms"); mySpeedCB->setItemData(1, 10);
+    mySpeedCB->addItem("100 ms"); mySpeedCB->setItemData(1, 100);
+    mySpeedCB->addItem("1 s"); mySpeedCB->setItemData(1, 1000);
+    myUi.toolBar->addWidget(mySpeedCB);
+
+    myTimer = new QTimer(this);
+    connect(myTimer, SIGNAL(timeout()), this, SLOT(timerStep()));
 }
 
 MainWindow::~MainWindow()
@@ -75,7 +90,14 @@ void MainWindow::on_actionClose_Program_triggered(bool checked)
 void MainWindow::on_actionRun_triggered(bool checked)
 {
     if (myComputer)
-        myComputer->startProgram();
+    {
+        if (mySpeedCB->currentIndex() == 0)
+            myComputer->startProgram();
+        else
+            myTimer->start(mySpeedCB->currentData().toInt());
+
+        mySpeedCB->setEnabled(false);
+    }
 }
 
 void MainWindow::on_actionStep_triggered(bool checked)
@@ -88,6 +110,7 @@ void MainWindow::on_actionStop_triggered(bool checked)
 {
     if (myComputer)
         myComputer->abort();
+    programStoped();
 }
 
 void MainWindow::on_actionPause_triggered(bool checked)
@@ -106,6 +129,7 @@ void MainWindow::on_actionRestart_triggered(bool checked)
     myUi.actionStep->setEnabled(true);
     myUi.actionRestart->setEnabled(true);
     myGroup->setEnabled(true);
+    mySpeedCB->setEnabled(true);
 }
 
 void MainWindow::stepFinished(CpuState state)
@@ -116,8 +140,14 @@ void MainWindow::stepFinished(CpuState state)
 
     for (size_t i = 0; i < state.regs.size(); i++)
     {
-        QTableWidgetItem *item = new QTableWidgetItem(QStringLiteral("0x%1").arg(state.regs[i], 16, 16, QLatin1Char('0')));
-        myUi.twRegisters->setItem(i,0,item);
+        auto item = myUi.twRegisters->item(i, 0);
+        QString text = item->text();
+        QString newtext = QStringLiteral("0x%1").arg(state.regs[i], 16, 16, QLatin1Char('0'));
+        item->setText( newtext );
+        if (text != newtext)
+            item->setForeground(QBrush(QColor(255,0,0)));
+        else
+            item->setForeground(QBrush(QColor(0, 0, 0)));
     }
 
     myUi.twRegisters->resizeColumnsToContents();
@@ -126,21 +156,10 @@ void MainWindow::stepFinished(CpuState state)
     QString rs1Str = QString::fromStdString(RegisterNames[state.nextstep.rs1]);
     QString rs2Str = QString::fromStdString(RegisterNames[state.nextstep.rs2]);
 
-    QString instStr;
-    for (const auto& i : InstructionSet)
-    {
-        if (state.nextstep.opcode == i.opcode)
-        {
-            if (i.funct3 == (uint8_t)-1 || i.funct3 == state.nextstep.funct3)
-            {
-                if (i.funct7 == (uint8_t)-1 || i.funct7 == state.nextstep.funct7)
-                {
-                    instStr = QString::fromStdString(i.name);
-                }
-            }
-        }
-    }
-
+    QString instStr = getInstructionName(
+        state.nextstep.opcode,
+        state.nextstep.funct3,
+        state.nextstep.funct7);
 
     myUi.lePC->setText(QStringLiteral("0x%1 (%2)").arg(state.nextstep.pc, 16, 16, QLatin1Char('0')).arg(instStr));
     myUi.leOpcode->setText(QStringLiteral("0x%1").arg(state.nextstep.opcode, 2, 16, QLatin1Char('0')));

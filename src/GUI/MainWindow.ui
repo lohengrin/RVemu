@@ -563,6 +563,9 @@ p, li { white-space: pre-wrap; }
        <property name="alternatingRowColors">
         <bool>true</bool>
        </property>
+       <attribute name="horizontalHeaderStretchLastSection">
+        <bool>true</bool>
+       </attribute>
        <attribute name="verticalHeaderDefaultSectionSize">
         <number>21</number>
        </attribute>
@@ -729,11 +732,6 @@ p, li { white-space: pre-wrap; }
        <column>
         <property name="text">
          <string>Value (hex)</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Value (dec)</string>
         </property>
        </column>
       </widget>

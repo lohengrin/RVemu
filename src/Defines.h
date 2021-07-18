@@ -67,4 +67,6 @@ struct Instruction {
 };
 
 extern std::vector<Instruction> InstructionSet;
+extern const char* getInstructionName(uint8_t opcode, uint8_t funct3, uint8_t funct7);
+
 extern std::vector<std::string> RegisterNames;

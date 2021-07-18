@@ -54,10 +54,10 @@ void ComputerThread::run()
 		std::unique_ptr<Cpu> cpu(new Cpu(*bus));
 
 		myCurrentMode = Mode::STARTED;
+		Mode previousMode = Mode::STARTED;
 
 		while (!abortFlag)
 		{
-			Mode previousMode = Mode::STARTED;
 			switch (myCurrentMode)
 			{
 			case Mode::STARTED:
@@ -121,7 +121,6 @@ void ComputerThread::run()
 
 					//- To GUI
 					updateState(cpu.get(), inst, opcode, rd, rs1, rs2, funct3, funct7);
-					//emit stepFinished(myState);
 
 					// 4. Execute.
 					cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
