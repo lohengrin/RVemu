@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Bus.h"
+#include "Trap.h"
 
 #include <stdint.h>
 
@@ -27,6 +28,7 @@ public:
 	void execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_t rs2, uint8_t funct3, uint8_t funct7);
 	void forwardPC() { pc += 4; }
 
+	Interrupt check_pending_interrupt();
 
 	//! Utility
 	uint64_t getPC() const { return pc; }

@@ -1,6 +1,8 @@
 ﻿#include "Cpu.h"
 #include "Defines.h"
 #include "Trap.h"
+#include "Uart.h"
+#include "Plic.h"
 
 #include <vector>
 #include <string>
@@ -99,6 +101,83 @@ void Cpu::decode(uint32_t inst, uint8_t& opcode, uint8_t& rd, uint8_t& rs1, uint
 	rs2 = (inst & 0x01f00000) >> 20;
 	funct3 = (inst & 0x00007000) >> 12;
 	funct7 = (inst & 0xfe000000) >> 25;
+}
+
+Interrupt Cpu::check_pending_interrupt()
+{
+	// 3.1.6.1 Privilege and Global Interrupt-Enable Stack in mstatus register
+	// "When a hart is executing in privilege mode x, interrupts are globally enabled when x
+	// IE=1 and globally disabled when x IE=0."
+	switch (mode)
+	{
+	case Mode::Machine:
+	{
+		// Check if the MIE bit is enabled.
+		if (((load_csr(MSTATUS) >> 3) & 1) == 0)
+			return Interrupt::InvalidInterrupt;
+	}
+	break;
+	case Mode::Supervisor:
+	{
+		// Check if the SIE bit is enabled.
+		if (((load_csr(SSTATUS) >> 1) & 1) == 0)
+			return Interrupt::InvalidInterrupt;
+	}
+	break;
+	};
+
+	// Check external interrupt for uart.
+	Uart* uart = dynamic_cast<Uart*>(bus.getDevice(UART_BASE));
+	if (uart)
+	{
+		uint64_t irq = 0;
+		if (uart->is_interrupting())
+			irq = UART_IRQ;
+
+		if (irq != 0)
+		{
+			bus.store(PLIC_SCLAIM, 32, irq);
+				//.expect("failed to write an IRQ to the PLIC_SCLAIM");
+			store_csr(MIP, load_csr(MIP) | MIP_SEIP);
+		}
+	}
+
+	// "An interrupt i will be taken if bit i is set in both mip and mie, and if interrupts are globally enabled.
+	// By default, M-mode interrupts are globally enabled if the hart’s current privilege mode is less than
+	// M, or if the current privilege mode is M and the MIE bit in the mstatus register is set. If bit i
+	// in mideleg is set, however, interrupts are considered to be globally enabled if the hart’s current
+	// privilege mode equals the delegated privilege mode (S or U) and that mode’s interrupt enable bit
+	// (SIE or UIE in mstatus) is set, or if the current privilege mode is less than the delegated privilege
+	// mode."
+
+	auto pending = load_csr(MIE) & load_csr(MIP);
+
+	if ((pending & MIP_MEIP) != 0 ){
+		store_csr(MIP, load_csr(MIP) & !MIP_MEIP);
+		return Interrupt::MachineExternalInterrupt;
+	}
+	if ((pending & MIP_MSIP) != 0 ){
+		store_csr(MIP, load_csr(MIP) & !MIP_MSIP);
+		return Interrupt::MachineSoftwareInterrupt;
+	}
+	if ((pending & MIP_MTIP) != 0 ){
+		store_csr(MIP, load_csr(MIP) & !MIP_MTIP);
+		return Interrupt::MachineTimerInterrupt;
+	}
+	if ((pending & MIP_SEIP) != 0 ){
+		store_csr(MIP, load_csr(MIP) & !MIP_SEIP);
+		return Interrupt::SupervisorExternalInterrupt;
+	}
+	if ((pending & MIP_SSIP) != 0 ){
+		store_csr(MIP, load_csr(MIP) & !MIP_SSIP);
+		return Interrupt::SupervisorSoftwareInterrupt;
+	}
+	if ((pending & MIP_STIP) != 0 ){
+		store_csr(MIP, load_csr(MIP) & !MIP_STIP);
+		return Interrupt::SupervisorTimerInterrupt;
+	}
+
+	return Interrupt::InvalidInterrupt;
 }
 
 

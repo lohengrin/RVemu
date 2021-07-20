@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Cpu.h"
 
 #include <stdexcept>
 #include <inttypes.h>
 
-enum class Except : uint32_t {
+class Cpu;
+
+enum class Except : uint64_t {
 	InstructionAddressMisaligned = 0,
 	InstructionAccessFault = 1,
 	IllegalInstruction = 2,
@@ -19,12 +20,29 @@ enum class Except : uint32_t {
 	EnvironmentCallFromMMode = 11,
 	InstructionPageFault = 12,
 	LoadPageFault = 13,
-	StoreAMOPageFault = 15
+	StoreAMOPageFault = 15,
+	InvalidExcept = (uint64_t)-1
+};
+
+/// All kinds of interrupts, an external asynchronous event that may
+/// cause a hardware thread to experience an unexpected transfer of
+/// control.
+enum class Interrupt : uint64_t {
+	UserSoftwareInterrupt = 0,
+	SupervisorSoftwareInterrupt = 1,
+	MachineSoftwareInterrupt = 3,
+	UserTimerInterrupt = 4,
+	SupervisorTimerInterrupt = 5,
+	MachineTimerInterrupt = 7,
+	UserExternalInterrupt = 8,
+	SupervisorExternalInterrupt = 9,
+	MachineExternalInterrupt = 11,
+	InvalidInterrupt = (uint64_t)-1
 };
 
 struct Trap {
 	/// Helper method for a trap handler.
-	static void take_trap(Except e, Cpu* cpu);
+	static void take_trap(Cpu* cpu, Except e = Except::InvalidExcept, Interrupt i = Interrupt::InvalidInterrupt);
 };
 
 struct CpuFatal : public std::runtime_error
@@ -56,7 +74,7 @@ struct CpuException : public std::exception
 		}
 	}
 
-	void take_trap(Cpu* cpu) const { Trap::take_trap(ex, cpu); }
+	void take_trap(Cpu* cpu) const { Trap::take_trap(cpu, ex); }
 
 	bool is_fatal() const {
 		return (ex == Except::InstructionAddressMisaligned ||
@@ -65,7 +83,6 @@ struct CpuException : public std::exception
 			ex == Except::StoreAMOAddressMisaligned ||
 			ex == Except::StoreAMOAccessFault);
 	};
-
 
 	Except ex;
 };

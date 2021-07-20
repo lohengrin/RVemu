@@ -1,13 +1,28 @@
 #include "Trap.h"
 #include "Defines.h"
+#include "Cpu.h"
 
 /// Helper method for a trap handler.
-void Trap::take_trap(Except e, Cpu* cpu)
+void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
 {
     auto exception_pc = cpu->pc - 4;
     auto previous_mode = cpu->mode;
 
-    uint32_t cause = (uint32_t) e;
+    uint64_t cause = (uint64_t)-1;
+
+    if (e != Except::InvalidExcept)
+    {
+        cause = (uint64_t)e;
+    }
+    else if (i != Interrupt::InvalidInterrupt)
+    {
+        cause = (uint64_t)i;
+        cause = ((uint64_t)1 << 63) | cause;
+    }
+    else
+        return;
+
+
     if ((previous_mode <= Cpu::Mode::Supervisor) &&
        (((cpu->warppingShr(cpu->load_csr(MEDELEG),cause)) & 1) != 0))
     {
@@ -15,7 +30,20 @@ void Trap::take_trap(Except e, Cpu* cpu)
         cpu->mode = Cpu::Mode::Supervisor;
 
         // Set the program counter to the supervisor trap-handler base address (stvec).
-        cpu->pc = cpu->load_csr(STVEC) & !1;
+        if (i != Interrupt::InvalidInterrupt)
+        {
+            uint64_t vector = 0;
+            if ((cpu->load_csr(STVEC) & 1) == 1)
+                vector = 4 * cause; // vectored mode
+            else
+                vector = 0; // direct mode
+            
+            cpu->pc = (cpu->load_csr(STVEC) & !1) + vector;
+        }
+        else 
+        {
+            cpu->pc = cpu->load_csr(STVEC) & !1;
+        }
 
         // 4.1.9 Supervisor Exception Program Counter (sepc)
         // "The low bit of sepc (sepc[0]) is always zero."
@@ -65,7 +93,20 @@ void Trap::take_trap(Except e, Cpu* cpu)
         cpu->mode = Cpu::Mode::Machine;
 
         // Set the program counter to the machine trap-handler base address (mtvec).
-        cpu->pc = cpu->load_csr(MTVEC) & !1;
+        if (i != Interrupt::InvalidInterrupt)
+        {
+            uint64_t vector = 0;
+            if ((cpu->load_csr(MTVEC) & 1) == 1)
+                vector = 4 * cause; // vectored mode
+            else
+                vector = 0; // direct mode
+
+            cpu->pc = (cpu->load_csr(MTVEC) & !1) + vector;
+        }
+        else
+        {
+            cpu->pc = cpu->load_csr(MTVEC) & !1;
+        }
 
         // 3.1.15 Machine Exception Program Counter (mepc)
         // "The low bit of mepc (mepc[0]) is always zero."

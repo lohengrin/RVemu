@@ -10,6 +10,9 @@
 #include <mutex>
 #include <deque>
 
+/// The interrupt request of UART.
+const uint64_t UART_IRQ = 10;
+
 /// Receive holding register (for input bytes).
 const uint64_t UART_RHR = 0;
 /// Transmit holding register (for output bytes).
@@ -52,6 +55,10 @@ public:
     //! Post char to in port
     void putChar(char c);
 
+    bool is_interrupting() {
+        if (interrupting) { interrupting = false; return true; }
+        return false;
+    }
 
 protected:
     uint64_t load8(uint64_t addr) const;

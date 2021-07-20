@@ -108,6 +108,7 @@ void Uart::threadFunc()
         {
             std::lock_guard<std::mutex> lock(uartMutex);
             uart[0] = key;
+            interrupting = true;
             uart[UART_LSR] |= UART_LSR_RX;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

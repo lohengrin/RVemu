@@ -152,7 +152,12 @@ void ComputerThread::run()
 					// 4. Execute.
 					cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
-					// 5. Read Uart
+					// 5. check interrupt
+					Interrupt i = cpu->check_pending_interrupt();
+					if (i != Interrupt::InvalidInterrupt)
+						Trap::take_trap(cpu, Except::InvalidExcept, i);
+
+					// 6. Read Uart
 					char key = uart->getChar();
 					if (key)
 						emit outputChar(key);

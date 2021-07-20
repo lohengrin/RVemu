@@ -39,6 +39,14 @@ const size_t MTVAL = 0x343;
 /// Machine interrupt pending.
 const size_t MIP = 0x344;
 
+// MIP fields.
+const uint64_t MIP_SSIP = 1 << 1;
+const uint64_t MIP_MSIP = 1 << 3;
+const uint64_t MIP_STIP = 1 << 5;
+const uint64_t MIP_MTIP = 1 << 7;
+const uint64_t MIP_SEIP = 1 << 9;
+const uint64_t MIP_MEIP = 1 << 11;
+
 // Supervisor-level CSRs.
 /// Supervisor status register.
 const size_t SSTATUS = 0x100;

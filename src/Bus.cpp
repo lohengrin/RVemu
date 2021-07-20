@@ -11,6 +11,14 @@ bool Bus::addDevice(uint64_t baseaddr, Device* dev)
 	return true;
 }
 
+Device* Bus::getDevice(uint64_t baseaddr)
+{
+	auto it = myDevices.find(baseaddr);
+	if (it != myDevices.end())
+		return it->second;
+	return nullptr;
+}
+
 
 uint64_t Bus::load(uint64_t addr, uint8_t size) const
 {

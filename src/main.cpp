@@ -124,6 +124,11 @@ int main(int argc, char** argv)
 
 			// 4. Execute.
 			cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
+
+			// 5. check interrupt
+			Interrupt i = cpu->check_pending_interrupt();
+			if (i != Interrupt::InvalidInterrupt)
+				Trap::take_trap(cpu, Except::InvalidExcept, i);
 		}
 	}
 	catch (const CpuFatal& e)
