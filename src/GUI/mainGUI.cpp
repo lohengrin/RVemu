@@ -1,7 +1,5 @@
 #include "MainWindow.h"
 
-
-
 #include <QApplication>
 
 #include <iostream>
@@ -9,9 +7,11 @@
 
 int main(int argc, char** argv)
 {
-
-
 	QApplication app(argc, argv);
+
+	app.setOrganizationName("Lohengrin");
+	app.setApplicationName("RVemu");
+
 	MainWindow mwin;
 	mwin.show();
 

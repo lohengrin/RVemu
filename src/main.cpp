@@ -1,7 +1,12 @@
+
 #include "Cpu.h"
+#include "Trap.h"
+
 #include "Memory.h"
 #include "Bus.h"
-#include "Trap.h"
+#include "Clint.h"
+#include "Plic.h"
+#include "Uart.h"
 
 #include <iostream>
 #include <iomanip>
@@ -65,10 +70,25 @@ void printStack(const Cpu* cpu)
 
 int main(int argc, char** argv)
 {
+	// Check args
+	if (argc != 2)
+	{
+		printUsage(argv[0]);
+		return 1;
+	}
+
 	// Instanciate Computer
-	std::unique_ptr<Memory> mem(new Memory);
-	std::unique_ptr<Bus> bus(new Bus(*mem));
-	std::unique_ptr<Cpu> cpu(new Cpu(*bus));
+	std::unique_ptr<Memory> mem(new Memory());
+	std::unique_ptr<Plic> plic(new Plic());
+	std::unique_ptr<Clint> clint(new Clint());
+	std::unique_ptr<Uart> uart(new Uart());
+	std::unique_ptr<Bus> bus(new Bus());
+	std::unique_ptr<Cpu> cpu(new Cpu(*bus, DRAM_BASE+mem->size()));
+
+	bus->addDevice(DRAM_BASE, mem.get());
+	bus->addDevice(PLIC_BASE, plic.get());
+	bus->addDevice(CLINT_BASE, clint.get());
+	bus->addDevice(UART_BASE, uart.get());
 
 	if (!mem->preload(argv[1]))
 	{

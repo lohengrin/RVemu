@@ -1,11 +1,15 @@
 
 IF(WITH_GUI)
 	set(GUI_FILES
-	 GUI/MainWindow.cpp
-	 GUI/MainWindow.h
-	 GUI/MainWindow.ui
-	 GUI/RVemu.qrc
-	  "GUI/ComputerThread.h" "GUI/ComputerThread.cpp")
+		GUI/MainWindow.cpp
+		GUI/MainWindow.h
+		GUI/MainWindow.ui
+		GUI/RVemu.qrc
+		GUI/ComputerThread.h
+		GUI/ComputerThread.cpp
+		GUI/Terminal.h
+		GUI/Terminal.cpp
+	)
 	SET(MAIN_FILE GUI/mainGUI.cpp)
 ELSE(WITH_GUI)
 	SET(MAIN_FILE main.cpp)

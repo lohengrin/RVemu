@@ -8,6 +8,7 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <deque>
 
 /// Receive holding register (for input bytes).
 const uint64_t UART_RHR = 0;
@@ -32,10 +33,10 @@ const uint8_t UART_LSR_TX = 1 << 5;
 /// The size of UART.
 const uint64_t UART_SIZE = 0x100;
 
-struct Uart : public Device
+class Uart : public Device
 {
 public:
-    Uart();
+    Uart(bool useConsole = true);
     virtual ~Uart();
 
     //! Device Interface
@@ -46,9 +47,18 @@ public:
     //! Get address space size of device
     uint64_t size() const { return UART_SIZE; }
 
+    //! return next char available in queue
+    char getChar();
+    //! Post char to in port
+    void putChar(char c);
+
+
 protected:
     uint64_t load8(uint64_t addr) const;
     void store8(uint64_t addr, uint64_t value);
+
+    // Flag to use console or custom terminal
+    bool myUseConsole;
 
     // Uart buffer
     mutable std::vector<uint8_t> uart;
@@ -58,6 +68,13 @@ protected:
     std::thread uartThread;
     void threadFunc();
     mutable std::mutex uartMutex;
+
+    // FIFO for custom terminal
+    mutable std::mutex inputMutex;
+    std::deque<char> input;
+
+    mutable std::mutex outputMutex;
+    std::deque<char> output;
 
     /// Bit if an interrupt happens.
     std::atomic<bool> interrupting;

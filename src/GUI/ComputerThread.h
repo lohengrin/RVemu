@@ -3,6 +3,11 @@
 #include <QThread>
 
 class Cpu;
+class Uart;
+class Plic;
+class Clint;
+class Memory;
+class Bus;
 
 struct CpuState {
 	std::vector<uint64_t> regs;
@@ -38,8 +43,12 @@ public:
 	void resetProgram() { resetFlag = true; abortFlag = true;  }
 	void abort() { resetFlag = false; abortFlag = true; }
 
+public slots:
+	void keypressed(char c);
+
 signals:
 	void stepFinished(CpuState state);
+	void outputChar(char c);
 	void paused();
 	void stoped();
 
@@ -52,4 +61,12 @@ protected:
 	bool resetFlag = true;
 	Mode myCurrentMode = Mode::STARTED;
 	CpuState myState;
+
+	//! The computer
+	Memory* mem;
+	Plic* plic;
+	Clint* clint;
+	Uart* uart;
+	Bus* bus;
+	Cpu* cpu;
 };

@@ -8,14 +8,14 @@
 #include <iomanip>
 
 //---------------------------------------------------------
-Cpu::Cpu(Bus& b) :
+Cpu::Cpu(Bus& b, uint64_t spinit) :
 	regs(32,0),
 	csrs(4096,0),
 	mode(Mode::Machine),
 	pc(DRAM_BASE),
 	bus(b)
 {
-	regs[REGSP] = DRAM_BASE + DEFAULT_MEMORYSIZE;
+	regs[REGSP] = spinit;
 }
 
 //---------------------------------------------------------

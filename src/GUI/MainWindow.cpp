@@ -1,7 +1,9 @@
 #include "MainWindow.h"
 #include "Defines.h"
+#include "Terminal.h"
 
 #include <QFileDialog>
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
@@ -49,7 +51,10 @@ void MainWindow::on_actionLoad_Program_triggered(bool checked)
     if (myComputer)
         on_actionClose_Program_triggered(true);
 
-    QString file = QFileDialog::getOpenFileName(this, tr("Select program to load"), QString(), "Program bin (*.bin);;All files (*.*)");
+    QSettings settings;
+    QString lastdir = settings.value("LastOpenDir", "").toString();
+
+    QString file = QFileDialog::getOpenFileName(this, tr("Select program to load"), lastdir, "Program bin (*.bin);;All files (*.*)");
     if (!file.isEmpty())
     {
         myComputer = new ComputerThread(file, this);
@@ -64,6 +69,12 @@ void MainWindow::on_actionLoad_Program_triggered(bool checked)
         connect(myComputer, &ComputerThread::stepFinished, this, &MainWindow::stepFinished);
         connect(myComputer, &ComputerThread::paused, this, &MainWindow::programPaused);
         connect(myComputer, &ComputerThread::stoped, this, &MainWindow::programStoped);
+        connect(myComputer, &ComputerThread::outputChar, myUi.teTerminal, &Terminal::printchar);
+        connect(myUi.teTerminal, &Terminal::keypressed, myComputer, &ComputerThread::keypressed, Qt::DirectConnection);
+
+        settings.setValue("LastOpenDir", file);
+
+        myUi.teTerminal->clear();
     }
 }
 
@@ -74,6 +85,8 @@ void MainWindow::on_actionClose_Program_triggered(bool checked)
         disconnect(myComputer, &ComputerThread::paused, this, &MainWindow::programPaused);
         disconnect(myComputer, &ComputerThread::stoped, this, &MainWindow::programStoped);
         disconnect(myComputer, &ComputerThread::stepFinished, this, &MainWindow::stepFinished);
+        disconnect(myComputer, &ComputerThread::outputChar, myUi.teTerminal, &Terminal::printchar);
+        disconnect(myUi.teTerminal, &Terminal::keypressed, myComputer, &ComputerThread::keypressed);
         myComputer->abort();
         myComputer->wait();
         delete myComputer;
@@ -130,6 +143,8 @@ void MainWindow::on_actionRestart_triggered(bool checked)
     myUi.actionRestart->setEnabled(true);
     myGroup->setEnabled(true);
     mySpeedCB->setEnabled(true);
+
+    myUi.teTerminal->clear();
 }
 
 void MainWindow::stepFinished(CpuState state)

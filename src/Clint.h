@@ -17,7 +17,7 @@ const uint64_t CLINT_MTIME = 0xbff8;
 const uint64_t CLINT_SIZE = 0x10000;
 
 /// The core-local interruptor (CLINT).
-struct Clint : public Device
+class Clint : public Device
 {
 public:
     Clint();

@@ -20,7 +20,7 @@ const uint64_t PLIC_SCLAIM = 0x201004;
 const uint64_t PLIC_SIZE = 0x4000000;
 
 /// The platform-level-interrupt controller (PLIC).
-struct Plic : public Device
+class Plic : public Device
 {
 public:
     Plic();

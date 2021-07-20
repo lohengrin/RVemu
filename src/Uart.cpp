@@ -5,28 +5,11 @@
 #include <chrono>
 
 #ifdef WIN32
-#include <io.h>
 #include <conio.h>
 #else
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-bool kbhit()
-{
-    termios term;
-    tcgetattr(0, &term);
-
-    termios term2 = term;
-    term2.c_lflag &= ~ICANON;
-    tcsetattr(0, TCSANOW, &term2);
-
-    int byteswaiting;
-    ioctl(0, FIONREAD, &byteswaiting);
-
-    tcsetattr(0, TCSANOW, &term);
-
-    return byteswaiting > 0;
-}
 int getch(void)
 {
     return getchar();
@@ -34,10 +17,11 @@ int getch(void)
 #endif
 
 //------------------------------------------------------------------------------
-Uart::Uart() :
+Uart::Uart(bool useConsole) :
     interrupting(false),
     uart(UART_SIZE,0),
     quitThread(false),
+    myUseConsole(useConsole),
     uartThread(&Uart::threadFunc, this)
 {
     {
@@ -53,31 +37,78 @@ Uart::~Uart()
     uartThread.join();
 }
 
+//! return next char available in queue
+//------------------------------------------------------------------------------
+char Uart::getChar()
+{
+    if (myUseConsole)
+        return 0;
+
+    char res = 0;
+    outputMutex.lock();
+    if (!output.empty())
+    {
+        res = output.front();
+        output.pop_front();
+    }
+    outputMutex.unlock();
+
+    return res;
+}
+
+//! Post char to in port
+//------------------------------------------------------------------------------
+void Uart::putChar(char c)
+{
+    if (myUseConsole)
+        return;
+
+    inputMutex.lock();
+    input.push_back(c);
+    inputMutex.unlock();
+}
+
+
 //------------------------------------------------------------------------------
 void Uart::threadFunc()
 {
     while (!quitThread)
     {
-        if (kbhit())
+        char key = 0;
+        if (myUseConsole)
         {
-            uint8_t key = getch();
-            //  Wait for previous data to be read
-            bool ready = false;
-            while (!ready)
+#ifdef WIN32
+            key = _getch();
+#else
+            key = getch();
+#endif
+        }
+        else
+        {
+            inputMutex.lock();
+            if (!input.empty())
             {
-                {
-                    std::lock_guard<std::mutex> lock(uartMutex);
-                    ready = (uart[UART_LSR] & UART_LSR_RX) == 0;
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                key = input.front();
+                input.pop_front();
             }
-
-            // Read the char
+            inputMutex.unlock();
+        }
+        //  Wait for previous data to be read
+        bool ready = false;
+        while (!ready)
+        {
             {
                 std::lock_guard<std::mutex> lock(uartMutex);
-                uart[0] = key;
-                uart[UART_LSR] |= UART_LSR_RX;
+                ready = (uart[UART_LSR] & UART_LSR_RX) == 0;
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        // Read the char
+        {
+            std::lock_guard<std::mutex> lock(uartMutex);
+            uart[0] = key;
+            uart[UART_LSR] |= UART_LSR_RX;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -118,7 +149,16 @@ uint64_t Uart::load8(uint64_t addr) const
 void Uart::store8(uint64_t addr, uint64_t value)
 {
     if (addr == UART_THR)
-        std::cout << ASU8(value);
+    {
+        if (myUseConsole)
+            std::cout << ASU8(value);
+        else
+        {
+            outputMutex.lock();
+            output.push_back(ASU8(value));
+            outputMutex.unlock();
+        }
+    }
     else
     {
         std::lock_guard<std::mutex> lock(uartMutex);

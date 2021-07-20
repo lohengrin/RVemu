@@ -18,7 +18,7 @@ public:
 	};
 	
 	//! Object 
-	Cpu(Bus& b);
+	Cpu(Bus& b, uint64_t spinit);
 	virtual ~Cpu();
 
 	//! Main loop functions

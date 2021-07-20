@@ -3,13 +3,23 @@
 #include "Cpu.h"
 #include "Memory.h"
 #include "Bus.h"
+#include "Clint.h"
+#include "Plic.h"
+#include "Uart.h"
 #include "Trap.h"
+
 
 //---------------------------------------------------
 ComputerThread::ComputerThread(const QString& programFile, QObject* parent) :
 	QThread(parent),
 	myCurrentMode(Mode::STARTED),
-	myProgramFile(programFile)
+	myProgramFile(programFile),
+	mem(nullptr),
+	plic(nullptr),
+	clint(nullptr),
+	uart(nullptr),
+	bus(nullptr),
+	cpu(nullptr)
 {
 	qRegisterMetaType<CpuState>("CpuState");
 
@@ -41,6 +51,14 @@ void ComputerThread::updateState(const Cpu* cpu, uint32_t inst, uint8_t opcode, 
 		myState.stack.push_back(std::make_pair(sp, cpu->readMem(sp, 64)));
 }
 
+
+//---------------------------------------------------
+void ComputerThread::keypressed(char c)
+{
+	if (uart)
+		uart->putChar(c);
+}
+
 //---------------------------------------------------
 void ComputerThread::run()
 {
@@ -48,10 +66,19 @@ void ComputerThread::run()
 	{
 		resetFlag = false; 
 		abortFlag = false;
+
 		// Instanciate Computer
-		std::unique_ptr<Memory> mem(new Memory);
-		std::unique_ptr<Bus> bus(new Bus(*mem));
-		std::unique_ptr<Cpu> cpu(new Cpu(*bus));
+		mem = new Memory();
+		plic = new Plic();
+		clint = new Clint();
+		uart = new Uart(false);
+		bus = new Bus();
+		cpu = new Cpu(*bus, DRAM_BASE + mem->size());
+
+		bus->addDevice(DRAM_BASE, mem);
+		bus->addDevice(PLIC_BASE, plic);
+		bus->addDevice(CLINT_BASE, clint);
+		bus->addDevice(UART_BASE, uart);
 
 		myCurrentMode = Mode::STARTED;
 		Mode previousMode = Mode::STARTED;
@@ -70,7 +97,7 @@ void ComputerThread::run()
 				uint8_t opcode, rd, rs1, rs2, funct3, funct7;
 				cpu->decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
-				updateState(cpu.get(), inst, opcode, rd, rs1, rs2, funct3, funct7);
+				updateState(cpu, inst, opcode, rd, rs1, rs2, funct3, funct7);
 			}
 			break;
 			case Mode::STOPED:
@@ -120,10 +147,15 @@ void ComputerThread::run()
 					cpu->decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
 					//- To GUI
-					updateState(cpu.get(), inst, opcode, rd, rs1, rs2, funct3, funct7);
+					updateState(cpu, inst, opcode, rd, rs1, rs2, funct3, funct7);
 
 					// 4. Execute.
 					cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
+
+					// 5. Read Uart
+					char key = uart->getChar();
+					if (key)
+						emit outputChar(key);
 				}
 				catch (const CpuFatal&)
 				{
@@ -133,6 +165,15 @@ void ComputerThread::run()
 			}
 			break;
 			}
+
+			
 		}
+
+		delete cpu;
+		delete bus;
+		delete uart;
+		delete clint;
+		delete plic;
+		delete mem;
 	}
 }

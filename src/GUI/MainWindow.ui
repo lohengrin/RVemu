@@ -24,7 +24,7 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QTextEdit" name="teTerminal">
+      <widget class="Terminal" name="teTerminal">
        <property name="palette">
         <palette>
          <active>
@@ -1057,6 +1057,13 @@ p, li { white-space: pre-wrap; }
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Terminal</class>
+   <extends>QTextEdit</extends>
+   <header>Terminal.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="RVemu.qrc"/>
  </resources>
