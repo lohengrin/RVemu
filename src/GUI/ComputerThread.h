@@ -8,6 +8,7 @@ class Plic;
 class Clint;
 class Memory;
 class Bus;
+class VirtIO;
 
 struct CpuState {
 	std::vector<uint64_t> regs;
@@ -34,7 +35,7 @@ public:
 		RUNSTEP  // Program is running one STEP
 	};
 
-	ComputerThread(const QString& programFile, QObject* parent = nullptr);
+	ComputerThread(const QString& programFile, const QString& diskImage = QString(), QObject* parent = nullptr);
 	~ComputerThread();
 
 	void startProgram() { myCurrentMode = Mode::RUNNING; }
@@ -57,6 +58,8 @@ protected:
 	void run() override;
 
 	QString myProgramFile;
+	QString myDiskImage;
+
 	bool abortFlag = false;
 	bool resetFlag = true;
 	Mode myCurrentMode = Mode::STARTED;
@@ -69,4 +72,5 @@ protected:
 	Uart* uart;
 	Bus* bus;
 	Cpu* cpu;
+	VirtIO* virtio;
 };

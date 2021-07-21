@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="GUI">
+    <file>icons/icons8-ssd-80.png</file>
     <file>icons/RISC-V-logo-square.svg.png</file>
     <file>icons/icons8-repeter-80.png</file>
     <file>icons/icons8-arreter-80.png</file>

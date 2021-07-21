@@ -505,6 +505,8 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="actionLoadDisk"/>
+    <addaction name="separator"/>
     <addaction name="actionLoad_Program"/>
     <addaction name="actionClose_Program"/>
    </widget>
@@ -534,6 +536,7 @@ p, li { white-space: pre-wrap; }
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionLoadDisk"/>
    <addaction name="actionLoad_Program"/>
    <addaction name="actionRestart"/>
    <addaction name="separator"/>
@@ -1054,6 +1057,15 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="toolTip">
     <string>Reset Computer and restart program from start</string>
+   </property>
+  </action>
+  <action name="actionLoadDisk">
+   <property name="icon">
+    <iconset resource="RVemu.qrc">
+     <normaloff>:/GUI/icons/icons8-ssd-80.png</normaloff>:/GUI/icons/icons8-ssd-80.png</iconset>
+   </property>
+   <property name="text">
+    <string>LoadDisk</string>
    </property>
   </action>
  </widget>

@@ -75,5 +75,6 @@ protected:
 	//! program counter
 	uint64_t	pc;
 
+public:
 	Bus& bus;
 };

@@ -6,20 +6,23 @@
 #include "Clint.h"
 #include "Plic.h"
 #include "Uart.h"
+#include "VirtIO.h"
 #include "Trap.h"
 
 
 //---------------------------------------------------
-ComputerThread::ComputerThread(const QString& programFile, QObject* parent) :
+ComputerThread::ComputerThread(const QString& programFile, const QString& diskImage, QObject* parent) :
 	QThread(parent),
 	myCurrentMode(Mode::STARTED),
 	myProgramFile(programFile),
+	myDiskImage(diskImage),
 	mem(nullptr),
 	plic(nullptr),
 	clint(nullptr),
 	uart(nullptr),
 	bus(nullptr),
-	cpu(nullptr)
+	cpu(nullptr),
+	virtio(nullptr)
 {
 	qRegisterMetaType<CpuState>("CpuState");
 
@@ -74,11 +77,13 @@ void ComputerThread::run()
 		uart = new Uart(false);
 		bus = new Bus();
 		cpu = new Cpu(*bus, DRAM_BASE + mem->size());
+		virtio = new VirtIO();
 
 		bus->addDevice(DRAM_BASE, mem);
 		bus->addDevice(PLIC_BASE, plic);
 		bus->addDevice(CLINT_BASE, clint);
 		bus->addDevice(UART_BASE, uart);
+		bus->addDevice(VIRTIO_BASE, virtio);
 
 		myCurrentMode = Mode::STARTED;
 		Mode previousMode = Mode::STARTED;
@@ -90,6 +95,8 @@ void ComputerThread::run()
 			case Mode::STARTED:
 			{
 				previousMode = Mode::STARTED;
+				if (!myDiskImage.isEmpty())
+					virtio->loadDisk(myDiskImage.toStdString());
 				mem->preload(myProgramFile.toStdString());
 				myCurrentMode = Mode::PAUSED;
 
@@ -180,5 +187,6 @@ void ComputerThread::run()
 		delete clint;
 		delete plic;
 		delete mem;
+		delete virtio;
 	}
 }

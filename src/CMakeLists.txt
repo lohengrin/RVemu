@@ -33,6 +33,8 @@ set(SOURCE_FILES
 	Clint.cpp
 	Uart.h
 	Uart.cpp
+	VirtIO.h
+	VirtIO.cpp
 )
 
 add_executable(RVemu 

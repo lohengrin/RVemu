@@ -18,6 +18,7 @@ public:
     ~MainWindow();
 
 protected slots:
+    void on_actionLoadDisk_triggered(bool checked);
     void on_actionLoad_Program_triggered(bool checked);
     void on_actionClose_Program_triggered(bool checked);
     void on_actionRun_triggered(bool checked);
@@ -38,4 +39,6 @@ protected:
     QActionGroup *myGroup;
     QComboBox* mySpeedCB;
     QTimer* myTimer;
+
+    QString myDisk;
 };

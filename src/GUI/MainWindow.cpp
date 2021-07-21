@@ -45,6 +45,18 @@ MainWindow::~MainWindow()
         on_actionClose_Program_triggered(true);
 }
 
+void MainWindow::on_actionLoadDisk_triggered(bool checked)
+{
+    QSettings settings;
+    QString lastdir = settings.value("LastOpenDirDisk", "").toString();
+
+    QString file = QFileDialog::getOpenFileName(this, tr("Select disk image to load"), lastdir, "Disk image (*.img);;All files (*.*)");
+    if (!file.isEmpty())
+    {
+        myDisk = file;
+        settings.setValue("LastOpenDirDisk", file);
+    }
+}
 
 void MainWindow::on_actionLoad_Program_triggered(bool checked)
 {
@@ -57,7 +69,7 @@ void MainWindow::on_actionLoad_Program_triggered(bool checked)
     QString file = QFileDialog::getOpenFileName(this, tr("Select program to load"), lastdir, "Program bin (*.bin);;All files (*.*)");
     if (!file.isEmpty())
     {
-        myComputer = new ComputerThread(file, this);
+        myComputer = new ComputerThread(file, myDisk, this);
         myComputer->start();
 
         myUi.actionRun->setEnabled(true);
@@ -150,8 +162,8 @@ void MainWindow::on_actionRestart_triggered(bool checked)
 void MainWindow::stepFinished(CpuState state)
 {
     myUi.lwStack->clear();
-    for (auto&& st : state.stack)
-        myUi.lwStack->addItem(QStringLiteral("0x%1").arg(st.second, 16, 16, QLatin1Char('0')));
+//    for (auto&& st : state.stack)
+//        myUi.lwStack->addItem(QStringLiteral("0x%1").arg(st.second, 16, 16, QLatin1Char('0')));
 
     for (size_t i = 0; i < state.regs.size(); i++)
     {
