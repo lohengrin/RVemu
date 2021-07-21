@@ -11,11 +11,13 @@
 
 //---------------------------------------------------------
 Cpu::Cpu(Bus& b, uint64_t spinit) :
-	regs(32,0),
-	csrs(4096,0),
+	regs(32, 0),
+	csrs(4096, 0),
 	mode(Mode::Machine),
 	pc(DRAM_BASE),
-	bus(b)
+	bus(b),
+	enable_paging(false),
+	page_table(0)
 {
 	regs[REGSP] = spinit;
 }
@@ -42,7 +44,8 @@ uint64_t Cpu::readMem(uint64_t addr, uint8_t size) const
 uint64_t Cpu::load(uint64_t addr, uint8_t size)
 {
 	try {
-		return bus.load(addr, size);
+		uint64_t p_addr = translate(addr, AccessType::Load);
+		return bus.load(p_addr, size);
 	}
 	catch (const CpuException& e)
 	{
@@ -57,7 +60,8 @@ uint64_t Cpu::load(uint64_t addr, uint8_t size)
 void Cpu::store(uint64_t addr, uint8_t size, uint64_t value)
 {
 	try {
-		bus.store(addr, size, value);
+		uint64_t p_addr = translate(addr, AccessType::Store);
+		bus.store(p_addr, size, value);
 	}
 	catch (const CpuException& e)
 	{
@@ -66,6 +70,146 @@ void Cpu::store(uint64_t addr, uint8_t size, uint64_t value)
 			throw CpuFatal(e.what());
 	}
 }
+
+/// Update the physical page number (PPN) and the addressing mode.
+void Cpu::update_paging(uint64_t csr_addr)
+{
+	if (csr_addr != SATP)
+		return;
+
+	// Read the physical page number (PPN) of the root page table, i.e., its
+	// supervisor physical address divided by 4 KiB.
+	page_table = (load_csr(SATP) & (((uint64_t)1 << 44) - 1)) * PAGE_SIZE;
+
+	// Read the MODE field, which selects the current address-translation scheme.
+	uint64_t mode = load_csr(SATP) >> 60;
+
+	// Enable the SV39 paging if the value of the mode field is 8.
+	enable_paging = (mode == 8);
+}
+
+/// Translate a virtual address to a physical address for the paged virtual-dram system.
+uint64_t Cpu::translate(uint64_t addr, AccessType access_type) const
+{
+	if (!enable_paging)
+		return addr;
+
+	// The following comments are cited from 4.3.2 Virtual Address Translation Process
+	// in "The RISC-V Instruction Set Manual Volume II-Privileged Architecture_20190608".
+
+	// "A virtual address va is translated into a physical address pa as follows:"
+	uint64_t levels = 3;
+	uint64_t vpn[] = { (addr >> 12) & 0x1ff, (addr >> 21) & 0x1ff, (addr >> 30) & 0x1ff };
+
+	// "1. Let a be satp.ppn × PAGESIZE, and let i = LEVELS − 1. (For Sv32, PAGESIZE=212
+	//     and LEVELS=2.)"
+	uint64_t a = page_table;
+	int64_t i = levels - 1;
+	uint64_t pte = 0;
+	while (true)
+	{
+		// "2. Let pte be the value of the PTE at address a+va.vpn[i]×PTESIZE. (For Sv32,
+		//     PTESIZE=4.) If accessing pte violates a PMA or PMP check, raise an access
+		//     exception corresponding to the original access type."
+		pte = bus.load(a + vpn[i] * 8, 64);
+
+		// "3. If pte.v = 0, or if pte.r = 0 and pte.w = 1, stop and raise a page-fault
+		//     exception corresponding to the original access type."
+		uint64_t v = pte & 1;
+		uint64_t r = (pte >> 1) & 1;
+		uint64_t w = (pte >> 2) & 1;
+		uint64_t x = (pte >> 3) & 1;
+		if (v == 0 || (r == 0 && w == 1)) {
+			switch (access_type)
+			{
+			case AccessType::Instruction: throw CpuException(Except::InstructionPageFault);
+			case AccessType::Load: throw CpuException(Except::LoadPageFault);
+			case AccessType::Store: throw CpuException(Except::StoreAMOPageFault);
+			}
+		}
+
+		// "4. Otherwise, the PTE is valid. If pte.r = 1 or pte.x = 1, go to step 5.
+		//     Otherwise, this PTE is a pointer to the next level of the page table.
+		//     Let i = i − 1. If i < 0, stop and raise a page-fault exception
+		//     corresponding to the original access type. Otherwise,
+		//     let a = pte.ppn × PAGESIZE and go to step 2."
+		if (r == 1 || x == 1)
+			break;
+
+		i -= 1;
+		uint64_t ppn = (pte >> 10) & 0x0fffffffffff;
+		a = ppn * PAGE_SIZE;
+		if (i < 0)
+		{
+			switch (access_type)
+			{
+			case AccessType::Instruction: throw CpuException(Except::InstructionPageFault);
+			case AccessType::Load: throw CpuException(Except::LoadPageFault);
+			case AccessType::Store: throw CpuException(Except::StoreAMOPageFault);
+			}
+		}
+	}
+
+	// A leaf PTE has been found.
+	uint64_t ppn[] = { (pte >> 10) & 0x1ff, (pte >> 19) & 0x1ff, (pte >> 28) & 0x03ffffff };
+
+	// We skip implementing from step 5 to 7.
+
+	// "5. A leaf PTE has been found. Determine if the requested dram access is allowed by
+	//     the pte.r, pte.w, pte.x, and pte.u bits, given the current privilege mode and the
+	//     value of the SUM and MXR fields of the mstatus register. If not, stop and raise a
+	//     page-fault exception corresponding to the original access type."
+
+	// "6. If i > 0 and pte.ppn[i − 1 : 0] ̸= 0, this is a misaligned superpage; stop and
+	//     raise a page-fault exception corresponding to the original access type."
+
+	// "7. If pte.a = 0, or if the dram access is a store and pte.d = 0, either raise a
+	//     page-fault exception corresponding to the original access type, or:
+	//     • Set pte.a to 1 and, if the dram access is a store, also set pte.d to 1.
+	//     • If this access violates a PMA or PMP check, raise an access exception
+	//     corresponding to the original access type.
+	//     • This update and the loading of pte in step 2 must be atomic; in particular, no
+	//     intervening store to the PTE may be perceived to have occurred in-between."
+
+	// "8. The translation is successful. The translated physical address is given as
+	//     follows:
+	//     • pa.pgoff = va.pgoff.
+	//     • If i > 0, then this is a superpage translation and pa.ppn[i−1:0] =
+	//     va.vpn[i−1:0].
+	//     • pa.ppn[LEVELS−1:i] = pte.ppn[LEVELS−1:i]."
+	uint64_t offset = addr & 0xfff;
+	switch (i)
+	{
+	case 0:
+	{
+		uint64_t ppn = (pte >> 10) & 0x0fffffffffff;
+		return (ppn << 12) | offset;
+	}
+	break;
+	case 1:
+	{
+		// Superpage translation. A superpage is a dram page of larger size than an
+		// ordinary page (4 KiB). It reduces TLB misses and improves performance.
+		return (ppn[2] << 30) | (ppn[1] << 21) | (vpn[0] << 12) | offset;
+	}
+	break;
+	case 2:
+	{
+		// Superpage translation. A superpage is a dram page of larger size than an
+		// ordinary page (4 KiB). It reduces TLB misses and improves performance.
+		return (ppn[2] << 30) | (vpn[1] << 21) | (vpn[0] << 12) | offset;
+	}
+	default:
+		switch (access_type)
+		{
+		case AccessType::Instruction: throw CpuException(Except::InstructionPageFault);
+		case AccessType::Load: throw CpuException(Except::LoadPageFault);
+		case AccessType::Store: throw CpuException(Except::StoreAMOPageFault);
+		}
+	};
+	return 0;
+}
+
 
 //---------------------------------------------------------
 uint64_t Cpu::load_csr(uint64_t addr) const
@@ -89,7 +233,8 @@ void Cpu::store_csr(uint64_t addr, uint64_t value)
 //---------------------------------------------------------
 uint32_t Cpu::fetch() const
 {
-	return ASU32(bus.load(pc, 32));
+	uint64_t p_pc = translate(pc, AccessType::Instruction);
+	return ASU32(bus.load(p_pc, 32));
 }
 
 //---------------------------------------------------------
@@ -136,8 +281,8 @@ Interrupt Cpu::check_pending_interrupt()
 
 		if (irq != 0)
 		{
-			bus.store(PLIC_SCLAIM, 32, irq);
-				//.expect("failed to write an IRQ to the PLIC_SCLAIM");
+			bus.store(PLIC_SCLAIM+PLIC_BASE, 32, irq);
+			//.expect("failed to write an IRQ to the PLIC_SCLAIM");
 			store_csr(MIP, load_csr(MIP) | MIP_SEIP);
 		}
 	}
@@ -152,27 +297,27 @@ Interrupt Cpu::check_pending_interrupt()
 
 	auto pending = load_csr(MIE) & load_csr(MIP);
 
-	if ((pending & MIP_MEIP) != 0 ){
+	if ((pending & MIP_MEIP) != 0) {
 		store_csr(MIP, load_csr(MIP) & !MIP_MEIP);
 		return Interrupt::MachineExternalInterrupt;
 	}
-	if ((pending & MIP_MSIP) != 0 ){
+	if ((pending & MIP_MSIP) != 0) {
 		store_csr(MIP, load_csr(MIP) & !MIP_MSIP);
 		return Interrupt::MachineSoftwareInterrupt;
 	}
-	if ((pending & MIP_MTIP) != 0 ){
+	if ((pending & MIP_MTIP) != 0) {
 		store_csr(MIP, load_csr(MIP) & !MIP_MTIP);
 		return Interrupt::MachineTimerInterrupt;
 	}
-	if ((pending & MIP_SEIP) != 0 ){
+	if ((pending & MIP_SEIP) != 0) {
 		store_csr(MIP, load_csr(MIP) & !MIP_SEIP);
 		return Interrupt::SupervisorExternalInterrupt;
 	}
-	if ((pending & MIP_SSIP) != 0 ){
+	if ((pending & MIP_SSIP) != 0) {
 		store_csr(MIP, load_csr(MIP) & !MIP_SSIP);
 		return Interrupt::SupervisorSoftwareInterrupt;
 	}
-	if ((pending & MIP_STIP) != 0 ){
+	if ((pending & MIP_STIP) != 0) {
 		store_csr(MIP, load_csr(MIP) & !MIP_STIP);
 		return Interrupt::SupervisorTimerInterrupt;
 	}
@@ -555,24 +700,28 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 				auto t = load_csr(csr_addr);
 				store_csr(csr_addr, regs[rs1]);
 				regs[rd] = t;
+				update_paging(csr_addr);
 			} break;
 			case 0x2: // csrrs
 			{
 				auto t = load_csr(csr_addr);
 				store_csr(csr_addr, t | regs[rs1]);
 				regs[rd] = t;
+				update_paging(csr_addr);
 			} break;
 			case 0x3: // csrrc
 			{
 				auto t = load_csr(csr_addr);
 				store_csr(csr_addr, t & (!regs[rs1]));
 				regs[rd] = t;
+				update_paging(csr_addr);
 			} break;
 			case 0x5: // csrrwi
 			{
 				auto zimm = ASU64(rs1);
 				regs[rd] = load_csr(csr_addr);
 				store_csr(csr_addr, zimm);
+				update_paging(csr_addr);
 			} break;
 			case 0x6: // csrrsi
 			{
@@ -580,6 +729,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 				auto t = load_csr(csr_addr);
 				store_csr(csr_addr, t | zimm);
 				regs[rd] = t;
+				update_paging(csr_addr);
 			} break;
 			case 0x7: // csrrci
 			{
@@ -587,6 +737,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 				auto t = load_csr(csr_addr);
 				store_csr(csr_addr, t & (!zimm));
 				regs[rd] = t;
+				update_paging(csr_addr);
 			} break;
 			default: executeError(opcode, funct3, funct7);
 			}

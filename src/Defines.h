@@ -17,8 +17,6 @@
 const uint64_t PAGE_SIZE = 4096;
 
 // Machine-level CSRs.
-/// Hardware thread ID.
-const uint64_t MHARTID = 0xf14;
 /// Machine status register.
 const uint64_t MSTATUS = 0x300;
 /// Machine exception delefation register.
@@ -29,10 +27,6 @@ const uint64_t MIDELEG = 0x303;
 const uint64_t MIE = 0x304;
 /// Machine trap-handler base address.
 const uint64_t MTVEC = 0x305;
-/// Machine counter enable.
-const uint64_t MCOUNTEREN = 0x306;
-/// Scratch register for machine trap handlers.
-const uint64_t MSCRATCH = 0x340;
 /// Machine exception program counter.
 const uint64_t MEPC = 0x341;
 /// Machine trap cause.
@@ -57,8 +51,6 @@ const uint64_t SSTATUS = 0x100;
 const uint64_t SIE = 0x104;
 /// Supervisor trap handler base address.
 const uint64_t STVEC = 0x105;
-/// Scratch register for supervisor trap handlers.
-const uint64_t SSCRATCH = 0x140;
 /// Supervisor exception program counter.
 const uint64_t SEPC = 0x141;
 /// Supervisor trap cause.

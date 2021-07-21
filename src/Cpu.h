@@ -17,6 +17,17 @@ public:
 		Supervisor = 0x01,
 		Machine = 0x03,
 	};
+
+	/// Access type that is used in the virtual address translation process. It decides which exception
+	/// should raises (InstructionPageFault, LoadPageFault or StoreAMOPageFault).
+	enum class AccessType {
+		/// Raises the exception InstructionPageFault. It is used for an instruction fetch.
+		Instruction,
+		/// Raises the exception LoadPageFault.
+		Load,
+		/// Raises the exception StoreAMOPageFault.
+		Store
+	};
 	
 	//! Object 
 	Cpu(Bus& b, uint64_t spinit);
@@ -29,6 +40,13 @@ public:
 	void forwardPC() { pc += 4; }
 
 	Interrupt check_pending_interrupt();
+
+	/// Update the physical page number (PPN) and the addressing mode.
+	void update_paging(uint64_t csr_addr);
+
+	/// Translate a virtual address to a physical address for the paged virtual-dram system.
+	uint64_t translate(uint64_t addr, AccessType access_type) const;
+
 
 	//! Utility
 	uint64_t getPC() const { return pc; }
@@ -74,7 +92,10 @@ protected:
 	Mode		mode;
 	//! program counter
 	uint64_t	pc;
-
+	//! SV39 paging flag.
+	bool enable_paging;
+	/// physical page number (PPN) × PAGE_SIZE (4096).
+	uint64_t page_table;
 public:
 	Bus& bus;
 };

@@ -162,8 +162,8 @@ void MainWindow::on_actionRestart_triggered(bool checked)
 void MainWindow::stepFinished(CpuState state)
 {
     myUi.lwStack->clear();
-//    for (auto&& st : state.stack)
-//        myUi.lwStack->addItem(QStringLiteral("0x%1").arg(st.second, 16, 16, QLatin1Char('0')));
+    for (auto&& st : state.stack)
+        myUi.lwStack->addItem(QStringLiteral("0x%1").arg(st.second, 16, 16, QLatin1Char('0')));
 
     for (size_t i = 0; i < state.regs.size(); i++)
     {

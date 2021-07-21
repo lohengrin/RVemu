@@ -50,8 +50,8 @@ void ComputerThread::updateState(const Cpu* cpu, uint32_t inst, uint8_t opcode, 
 	myState.nextstep.funct7 = funct7;
 
 	myState.stack.clear();
-	for (uint64_t sp = cpu->getRegister(REGSP); sp < DRAM_BASE + DEFAULT_MEMORYSIZE; sp += 8)
-		myState.stack.push_back(std::make_pair(sp, cpu->readMem(sp, 64)));
+//	for (uint64_t sp = cpu->getRegister(REGSP); sp < DRAM_BASE + DEFAULT_MEMORYSIZE; sp += 8)
+//		myState.stack.push_back(std::make_pair(sp, cpu->readMem(sp, 64)));
 }
 
 
