@@ -38,11 +38,11 @@ void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
             else
                 vector = 0; // direct mode
             
-            cpu->pc = (cpu->load_csr(STVEC) & !1) + vector;
+            cpu->pc = (cpu->load_csr(STVEC) & ~1) + vector;
         }
         else 
         {
-            cpu->pc = cpu->load_csr(STVEC) & !1;
+            cpu->pc = cpu->load_csr(STVEC) & ~1;
         }
 
         // 4.1.9 Supervisor Exception Program Counter (sepc)
@@ -51,7 +51,7 @@ void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
         // the instruction that was interrupted or that encountered the exception.
         // Otherwise, sepc is never written by the implementation, though it may be
         // explicitly written by software."
-        cpu->store_csr(SEPC, exception_pc & !1);
+        cpu->store_csr(SEPC, exception_pc & ~1);
 
         // 4.1.10 Supervisor Cause Register (scause)
         // "When a trap is taken into S-mode, scause is written with a code indicating
@@ -75,15 +75,15 @@ void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
         if (((cpu->load_csr(SSTATUS) >> 1) & 1) == 1)
             cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) | (1 << 5));
         else
-            cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) & !(1 << 5));
+            cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) & ~(1 << 5));
 
         // Set a global interrupt-enable bit for supervisor mode (SIE, 1) to 0.
-        cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) & !(1 << 1));
+        cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) & ~(1 << 1));
         // 4.1.1 Supervisor Status Register (sstatus)
         // "When a trap is taken, SPP is set to 0 if the trap originated from user mode, or
         // 1 otherwise."
         if (previous_mode == Cpu::Mode::User)
-            cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) & !(1 << 8));
+            cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) & ~(1 << 8));
         else
             cpu->store_csr(SSTATUS, cpu->load_csr(SSTATUS) | (1 << 8));
     }
@@ -101,11 +101,11 @@ void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
             else
                 vector = 0; // direct mode
 
-            cpu->pc = (cpu->load_csr(MTVEC) & !1) + vector;
+            cpu->pc = (cpu->load_csr(MTVEC) & ~1) + vector;
         }
         else
         {
-            cpu->pc = cpu->load_csr(MTVEC) & !1;
+            cpu->pc = cpu->load_csr(MTVEC) & ~1;
         }
 
         // 3.1.15 Machine Exception Program Counter (mepc)
@@ -114,7 +114,7 @@ void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
         // the instruction that was interrupted or that encountered the exception.
         // Otherwise, mepc is never written by the implementation, though it may be
         // explicitly written by software."
-        cpu->store_csr(MEPC, exception_pc & !1);
+        cpu->store_csr(MEPC, exception_pc & ~1);
 
         // 3.1.16 Machine Cause Register (mcause)
         // "When a trap is taken into M-mode, mcause is written with a code indicating
@@ -139,11 +139,11 @@ void Trap::take_trap(Cpu* cpu, Except e, Interrupt i)
         if (((cpu->load_csr(MSTATUS) >> 3) & 1) == 1) 
             cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) | (1 << 7));
         else
-            cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) & !(1 << 7));
+            cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) & ~(1 << 7));
 
         // Set a global interrupt-enable bit for supervisor mode (MIE, 3) to 0.
-        cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) & !(1 << 3));
+        cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) & ~(1 << 3));
         // Set a privious privilege mode for supervisor mode (MPP, 11..13) to 0.
-        cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) & !(0b11 << 11));
+        cpu->store_csr(MSTATUS, cpu->load_csr(MSTATUS) & ~(0b11 << 11));
     }
 }

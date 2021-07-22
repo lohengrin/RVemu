@@ -93,23 +93,27 @@ void Uart::threadFunc()
             }
             inputMutex.unlock();
         }
-        //  Wait for previous data to be read
-        bool ready = false;
-        while (!ready)
+
+        if (key != 0)
         {
+            //  Wait for previous data to be read
+            bool ready = false;
+            while (!ready)
+            {
+                {
+                    std::lock_guard<std::mutex> lock(uartMutex);
+                    ready = (uart[UART_LSR] & UART_LSR_RX) == 0;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+
+            // Read the char
             {
                 std::lock_guard<std::mutex> lock(uartMutex);
-                ready = (uart[UART_LSR] & UART_LSR_RX) == 0;
+                uart[0] = key;
+                interrupting = true;
+                uart[UART_LSR] |= UART_LSR_RX;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-
-        // Read the char
-        {
-            std::lock_guard<std::mutex> lock(uartMutex);
-            uart[0] = key;
-            interrupting = true;
-            uart[UART_LSR] |= UART_LSR_RX;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

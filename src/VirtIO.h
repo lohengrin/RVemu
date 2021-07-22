@@ -76,6 +76,10 @@ public:
 
     bool loadDisk(const std::string& imageFile);
 
+    /// Access the disk via virtio. This is an associated function which takes a `cpu` object to
+    /// read and write with a dram directly (DMA).
+    void disk_access(Cpu* cpu);
+
 protected:
     uint64_t load32(uint64_t addr) const;
     void store32(uint64_t addr, uint64_t value);
@@ -85,10 +89,6 @@ protected:
 
     uint64_t read_disk(uint64_t addr) const { return ASU64(disk[addr]); }
     void write_disk(uint64_t addr, uint64_t value) { disk[addr] = ASU8(value); }
-
-    /// Access the disk via virtio. This is an associated function which takes a `cpu` object to
-    /// read and write with a dram directly (DMA).
-    void disk_access(Cpu* cpu);
 
     uint64_t id;
     uint32_t driver_features;

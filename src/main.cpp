@@ -1,12 +1,12 @@
 
 #include "Cpu.h"
-#include "Trap.h"
-
 #include "Memory.h"
 #include "Bus.h"
 #include "Clint.h"
 #include "Plic.h"
 #include "Uart.h"
+#include "VirtIO.h"
+#include "Trap.h"
 
 #include <iostream>
 #include <iomanip>
@@ -15,7 +15,7 @@
 void printUsage(const char* name)
 {
 	std::cout << "RVemu: a simple RISC-V emulator" << std::endl;
-	std::cout << "Usage: " << name << " <file.bin>" << std::endl;
+	std::cout << "Usage: " << name << " <file.bin> <disk.img>" << std::endl;
 }
 
 //---------------------------------------------------------
@@ -71,7 +71,7 @@ void printStack(const Cpu* cpu)
 int main(int argc, char** argv)
 {
 	// Check args
-	if (argc != 2)
+	if (argc != 3)
 	{
 		printUsage(argv[0]);
 		return 1;
@@ -84,15 +84,23 @@ int main(int argc, char** argv)
 	std::unique_ptr<Uart> uart(new Uart());
 	std::unique_ptr<Bus> bus(new Bus());
 	std::unique_ptr<Cpu> cpu(new Cpu(*bus, DRAM_BASE+mem->size()));
+	std::unique_ptr<VirtIO> virtio(new VirtIO());
 
 	bus->addDevice(DRAM_BASE, mem.get());
 	bus->addDevice(PLIC_BASE, plic.get());
 	bus->addDevice(CLINT_BASE, clint.get());
 	bus->addDevice(UART_BASE, uart.get());
-
+	bus->addDevice(VIRTIO_BASE, virtio.get());
+		
 	if (!mem->preload(argv[1]))
 	{
 		std::cerr << "Error while loading: " << argv[1] << std::endl;
+		return 1;
+	}
+
+	if (!virtio->loadDisk(argv[2]))
+	{
+		std::cerr << "Error while loading: " << argv[2] << std::endl;
 		return 1;
 	}
 
@@ -128,7 +136,7 @@ int main(int argc, char** argv)
 			// 5. check interrupt
 			Interrupt i = cpu->check_pending_interrupt();
 			if (i != Interrupt::InvalidInterrupt)
-				Trap::take_trap(cpu, Except::InvalidExcept, i);
+				Trap::take_trap(cpu.get(), Except::InvalidExcept, i);
 		}
 	}
 	catch (const CpuFatal& e)

@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     myUi.actionRestart->setEnabled(false);
 
 
-    for (size_t i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++)
         myUi.twRegisters->setItem(i, 0, new QTableWidgetItem());
 
     mySpeedCB = new QComboBox(this);
@@ -134,7 +134,10 @@ void MainWindow::on_actionStep_triggered(bool checked)
 void MainWindow::on_actionStop_triggered(bool checked)
 {
     if (myComputer)
+    {
         myComputer->abort();
+        myComputer->wait(1000);
+    }
     programStoped();
 }
 
@@ -165,7 +168,7 @@ void MainWindow::stepFinished(CpuState state)
     for (auto&& st : state.stack)
         myUi.lwStack->addItem(QStringLiteral("0x%1").arg(st.second, 16, 16, QLatin1Char('0')));
 
-    for (size_t i = 0; i < state.regs.size(); i++)
+    for (int i = 0; i < state.regs.size(); i++)
     {
         auto item = myUi.twRegisters->item(i, 0);
         QString text = item->text();

@@ -3,6 +3,7 @@
 #include "Trap.h"
 #include "Uart.h"
 #include "Plic.h"
+#include "VirtIO.h"
 
 #include <vector>
 #include <string>
@@ -224,7 +225,7 @@ uint64_t Cpu::load_csr(uint64_t addr) const
 void Cpu::store_csr(uint64_t addr, uint64_t value)
 {
 	if (addr == SIE)
-		csrs[MIE] = (csrs[MIE] & !csrs[MIDELEG]) | (value & csrs[MIDELEG]);
+		csrs[MIE] = (csrs[MIE] & ~csrs[MIDELEG]) | (value & csrs[MIDELEG]);
 	else
 		csrs[addr] = value;
 }
@@ -273,18 +274,22 @@ Interrupt Cpu::check_pending_interrupt()
 
 	// Check external interrupt for uart.
 	Uart* uart = dynamic_cast<Uart*>(bus.getDevice(UART_BASE));
-	if (uart)
-	{
-		uint64_t irq = 0;
-		if (uart->is_interrupting())
-			irq = UART_IRQ;
+	VirtIO* virtio = dynamic_cast<VirtIO*>(bus.getDevice(VIRTIO_BASE));
 
-		if (irq != 0)
-		{
-			bus.store(PLIC_SCLAIM+PLIC_BASE, 32, irq);
-			//.expect("failed to write an IRQ to the PLIC_SCLAIM");
-			store_csr(MIP, load_csr(MIP) | MIP_SEIP);
-		}
+	uint64_t irq = 0;
+	if (uart && uart->is_interrupting())
+		irq = UART_IRQ;
+	else if (virtio && virtio->is_interrupting())
+	{
+		virtio->disk_access(this);
+		irq = VIRTIO_IRQ;
+	}
+
+	if (irq != 0)
+	{
+		bus.store(PLIC_SCLAIM+PLIC_BASE, 32, irq);
+		//.expect("failed to write an IRQ to the PLIC_SCLAIM");
+		store_csr(MIP, load_csr(MIP) | MIP_SEIP);
 	}
 
 	// "An interrupt i will be taken if bit i is set in both mip and mie, and if interrupts are globally enabled.
@@ -298,27 +303,27 @@ Interrupt Cpu::check_pending_interrupt()
 	auto pending = load_csr(MIE) & load_csr(MIP);
 
 	if ((pending & MIP_MEIP) != 0) {
-		store_csr(MIP, load_csr(MIP) & !MIP_MEIP);
+		store_csr(MIP, load_csr(MIP) & ~MIP_MEIP);
 		return Interrupt::MachineExternalInterrupt;
 	}
 	if ((pending & MIP_MSIP) != 0) {
-		store_csr(MIP, load_csr(MIP) & !MIP_MSIP);
+		store_csr(MIP, load_csr(MIP) & ~MIP_MSIP);
 		return Interrupt::MachineSoftwareInterrupt;
 	}
 	if ((pending & MIP_MTIP) != 0) {
-		store_csr(MIP, load_csr(MIP) & !MIP_MTIP);
+		store_csr(MIP, load_csr(MIP) & ~MIP_MTIP);
 		return Interrupt::MachineTimerInterrupt;
 	}
 	if ((pending & MIP_SEIP) != 0) {
-		store_csr(MIP, load_csr(MIP) & !MIP_SEIP);
+		store_csr(MIP, load_csr(MIP) & ~MIP_SEIP);
 		return Interrupt::SupervisorExternalInterrupt;
 	}
 	if ((pending & MIP_SSIP) != 0) {
-		store_csr(MIP, load_csr(MIP) & !MIP_SSIP);
+		store_csr(MIP, load_csr(MIP) & ~MIP_SSIP);
 		return Interrupt::SupervisorSoftwareInterrupt;
 	}
 	if ((pending & MIP_STIP) != 0) {
-		store_csr(MIP, load_csr(MIP) & !MIP_STIP);
+		store_csr(MIP, load_csr(MIP) & ~MIP_STIP);
 		return Interrupt::SupervisorTimerInterrupt;
 	}
 
@@ -653,9 +658,9 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 					if (((load_csr(SSTATUS) >> 5) & 1) == 1)
 						store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 1));
 					else
-						store_csr(SSTATUS, load_csr(SSTATUS) & !(1 << 1));
+						store_csr(SSTATUS, load_csr(SSTATUS) & ~(1 << 1));
 					store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 5));
-					store_csr(SSTATUS, load_csr(SSTATUS) & !(1 << 8));
+					store_csr(SSTATUS, load_csr(SSTATUS) & ~(1 << 8));
 				}
 				else if (rs2 == 0x2 && funct7 == 0x18)
 				{
@@ -680,10 +685,10 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 					if (((load_csr(MSTATUS) >> 7) & 1) == 1)
 						store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 3));
 					else
-						store_csr(MSTATUS, load_csr(MSTATUS) & !(1 << 3));
+						store_csr(MSTATUS, load_csr(MSTATUS) & ~(1 << 3));
 
 					store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 7));
-					store_csr(MSTATUS, load_csr(MSTATUS) & !(0b11 << 11));
+					store_csr(MSTATUS, load_csr(MSTATUS) & ~(0b11 << 11));
 				}
 				else if (funct7 == 0x9)
 				{
@@ -712,7 +717,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			case 0x3: // csrrc
 			{
 				auto t = load_csr(csr_addr);
-				store_csr(csr_addr, t & (!regs[rs1]));
+				store_csr(csr_addr, t & (~regs[rs1]));
 				regs[rd] = t;
 				update_paging(csr_addr);
 			} break;
@@ -735,7 +740,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			{
 				auto zimm = ASU64(rs1);
 				auto t = load_csr(csr_addr);
-				store_csr(csr_addr, t & (!zimm));
+				store_csr(csr_addr, t & (~zimm));
 				regs[rd] = t;
 				update_paging(csr_addr);
 			} break;
