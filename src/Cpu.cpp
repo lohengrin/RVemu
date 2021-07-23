@@ -372,7 +372,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 		case 0x13: //..................................................................
 		{
 			// imm[11:0] = inst[31:20]
-			int64_t imm = ASI64(ASI32(inst & 0xfff00000) >> 20);
+			int64_t imm = ASI64(ASI32(inst & 0xfff00000)) >> 20;
 			// "The shift amount is encoded in the lower 6 bits of the I-immediate field for RV64I."
 			uint32_t shamt = (imm & 0x3f);
 			switch (funct3) {
@@ -382,10 +382,11 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			case 0x3: regs[rd] = (regs[rs1] < ASU64(imm)) ? 1 : 0; break;		// sltiu
 			case 0x4: regs[rd] = regs[rs1] ^ ASU64(imm); break;					// xori
 			case 0x5: // lhu
-				switch (funct7) {
+				switch (funct7>>1) {
 				case 0x00: regs[rd] = warppingShr(regs[rs1], shamt); break;		// srli
-				case 0x10: regs[rd] = ASU64(warppingShr(ASI64(regs[rs1]), shamt)); break;// srli
-				default: executeError(opcode, funct3, funct7);
+				case 0x10: regs[rd] = ASU64(warppingShr(ASI64(regs[rs1]), shamt)); break;// srai
+				default: 
+					break;
 				} break;
 			case 0x6: regs[rd] = regs[rs1] | imm; break;						// ori
 			case 0x7: regs[rd] = regs[rs1] & imm; break;						// andi
@@ -395,14 +396,14 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 		break;
 		case 0x17: // auipc //..................................................................
 		{
-			int64_t imm = ASI64(ASI32(inst & 0xfff00000) >> 20);
+			int64_t imm = ASI64(ASI32(inst & 0xfffff000));
 			regs[rd] = warppingSub(warppingAdd(pc, imm), 4);
 		}
 		break;
 		case 0x1b: //..................................................................
 		{
 			// imm[11:0] = inst[31:20]
-			int64_t imm = ASI64(ASI32(inst & 0xfff00000) >> 20);
+			int64_t imm = ASI64(ASI32(inst)) >> 20;
 			// "SLLIW, SRLIW, and SRAIW encodings with imm[5] ̸= 0 are reserved."
 			// "The shift amount is encoded in the lower 6 bits of the I-immediate field for RV64I."
 			uint32_t shamt = (imm & 0x1f);
@@ -679,9 +680,9 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 					case 1: mode = Mode::Supervisor; break;
 					default: mode = Mode::User; break;
 					};
+
 					// The MPIE bit is the 7th and the MIE bit is the 3rd of the
 					// MSTATUS csr.
-
 					if (((load_csr(MSTATUS) >> 7) & 1) == 1)
 						store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 3));
 					else

@@ -9,6 +9,8 @@
 #include "VirtIO.h"
 #include "Trap.h"
 
+#include <fstream>
+#include <iomanip>
 
 //---------------------------------------------------
 ComputerThread::ComputerThread(const QString& programFile, const QString& diskImage, QObject* parent) :
@@ -61,6 +63,35 @@ void ComputerThread::keypressed(char c)
 	if (uart)
 		uart->putChar(c);
 }
+
+void printRegisters(const Cpu* cpu, std::ofstream& out)
+{
+	for (int i = 0; i < 32; i++)
+	{
+		out << "x" << std::setfill('0') << std::setw(2) << std::dec << i << "(" << RegisterNames[i] << ")=" << std::setfill('0') << std::hex << "0x" << std::setw(16) << cpu->getRegister(i) << " ";
+		if ((i + 1) % 4 == 0)
+			out << std::endl;
+	}
+}
+
+//---------------------------------------------------------
+#if 0
+void printCsrs(const Cpu* cpu)
+{
+	std::cout << "==== CSRS ========================================" << std::endl;
+	std::cout << "mstatus=0x" << std::hex << std::setw(16) << cpu->getCsr(MSTATUS)
+		<< "\tmtvec=0x" << std::hex << std::setw(16) << cpu->getCsr(MTVEC)
+		<< "\tmepc=0x" << std::hex << std::setw(16) << cpu->getCsr(MEPC)
+		<< "\tmcause=0x" << std::hex << std::setw(16) << cpu->getCsr(MCAUSE) << std::endl;
+
+	std::cout << "sstatus=0x" << std::hex << std::setw(16) << cpu->getCsr(SSTATUS)
+		<< "\tstvec=0x" << std::hex << std::setw(16) << cpu->getCsr(STVEC)
+		<< "\tsepc=0x" << std::hex << std::setw(16) << cpu->getCsr(SEPC)
+		<< "\tscause=0x" << std::hex << std::setw(16) << cpu->getCsr(SCAUSE) << std::endl;
+	std::cout << "==================================================" << std::endl;
+}
+#endif
+
 
 //---------------------------------------------------
 void ComputerThread::run()
@@ -120,6 +151,15 @@ void ComputerThread::run()
 			case Mode::PAUSED:
 				if (previousMode != Mode::PAUSED)
 				{
+					// 1. Fetch.
+					uint32_t inst = cpu->fetch();
+					// 3. Decode.
+					uint8_t opcode, rd, rs1, rs2, funct3, funct7;
+					cpu->decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
+
+					//- To GUI
+					updateState(cpu, inst, opcode, rd, rs1, rs2, funct3, funct7);
+
 					emit stepFinished(myState);
 					emit paused();
 				}
@@ -153,8 +193,20 @@ void ComputerThread::run()
 					uint8_t opcode, rd, rs1, rs2, funct3, funct7;
 					cpu->decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
+#if 1
+					static std::ofstream log("logcpp.txt");
+//					printRegisters(cpu, log);
+					log << "0x" << std::hex << std::setw(8) << std::setfill('0') << cpu->getPC()
+						<< ": opcode:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)inst
+						<< " rd:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rd
+						<< " rs1:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rs1
+						<< " rs2:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rs2
+						<< " f3:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)funct3
+						<< " f7:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)funct7 << std::endl;
+
 					//- To GUI
-					updateState(cpu, inst, opcode, rd, rs1, rs2, funct3, funct7);
+//					updateState(cpu, inst, opcode, rd, rs1, rs2, funct3, funct7);
+#endif
 
 					// 4. Execute.
 					cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
