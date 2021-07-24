@@ -78,9 +78,9 @@ uint64_t Memory::load8(uint64_t addr) const
 /// Load 2 bytes from the little-endian dram.
 uint64_t Memory::load16(uint64_t addr) const
 {
-#if ENDIAN_ORDER==LITTLE_ENDIAN
+#if BYTE_ORDER==LITTLE_ENDIAN
     return ASU64(*((uint16_t*)&dram[addr]));
-#elif ENDIAN_ORDER==BIG_ENDIAN
+#elif BYTE_ORDER==BIG_ENDIAN
     return ASU64(dram[addr])
         | ASU64(dram[addr + 1]) << 8;
 #endif
@@ -89,9 +89,9 @@ uint64_t Memory::load16(uint64_t addr) const
 /// Load 4 bytes from the little-endian dram.
 uint64_t Memory::load32(uint64_t addr) const
 {
-#if ENDIAN_ORDER==LITTLE_ENDIAN
+#if BYTE_ORDER==LITTLE_ENDIAN
     return ASU64(*((uint32_t*)&dram[addr]));
-#elif ENDIAN_ORDER==BIG_ENDIAN
+#elif BYTE_ORDER==BIG_ENDIAN
     return ASU64(dram[addr])
         | ASU64(dram[addr + 1]) << 8
         | ASU64(dram[addr + 2]) << 16
@@ -102,9 +102,9 @@ uint64_t Memory::load32(uint64_t addr) const
 /// Load 8 bytes from the little-endian dram.
 uint64_t Memory::load64(uint64_t addr) const
 {
-#if ENDIAN_ORDER==LITTLE_ENDIAN
+#if BYTE_ORDER==LITTLE_ENDIAN
     return *((uint64_t*)&dram[addr]);
-#elif ENDIAN_ORDER==BIG_ENDIAN
+#elif BYTE_ORDER==BIG_ENDIAN
     return ASU64(dram[addr])
         | ASU64(dram[addr + 1]) << 8
         | ASU64(dram[addr + 2]) << 16
@@ -125,9 +125,9 @@ void Memory::store8(uint64_t addr, uint64_t value)
 /// Store 2 bytes to the little-endian dram.
 void Memory::store16(uint64_t addr, uint64_t value) 
 {
-#if ENDIAN_ORDER==LITTLE_ENDIAN
+#if BYTE_ORDER==LITTLE_ENDIAN
     * ((uint16_t*)&dram[addr]) = ASU16(value);
-#elif ENDIAN_ORDER==BIG_ENDIAN
+#elif BYTE_ORDER==BIG_ENDIAN
     dram[addr] = ASU8(value & 0xff);
     dram[addr + 1] = ASU8((value >> 8) & 0xff);
 #endif
@@ -136,9 +136,9 @@ void Memory::store16(uint64_t addr, uint64_t value)
 /// Store 4 bytes to the little-endian dram.
 void Memory::store32(uint64_t addr, uint64_t value) 
 {
-#if ENDIAN_ORDER==LITTLE_ENDIAN
+#if BYTE_ORDER==LITTLE_ENDIAN
     * ((uint32_t*)&dram[addr]) = ASU32(value);
-#elif ENDIAN_ORDER==BIG_ENDIAN
+#elif BYTE_ORDER==BIG_ENDIAN
     dram[addr] = ASU8(value & 0xff);
     dram[addr + 1] = ASU8((value >> 8) & 0xff);
     dram[addr + 2] = ASU8((value >> 16) & 0xff);
@@ -149,9 +149,9 @@ void Memory::store32(uint64_t addr, uint64_t value)
 /// Store 8 bytes to the little-endian dram.
 void Memory::store64(uint64_t addr, uint64_t value)
 {
-#if ENDIAN_ORDER==LITTLE_ENDIAN
+#if BYTE_ORDER==LITTLE_ENDIAN
     * ((uint64_t*)&dram[addr]) = ASU64(value);
-#elif ENDIAN_ORDER==BIG_ENDIAN
+#elif BYTE_ORDER==BIG_ENDIAN
     dram[addr] = ASU8(value & 0xff);
     dram[addr + 1] = ASU8((value >> 8) & 0xff);
     dram[addr + 2] = ASU8((value >> 16) & 0xff);
