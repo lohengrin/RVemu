@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+#define LITTLE_ENDIAN 0x41424344UL 
+#define BIG_ENDIAN    0x44434241UL
+#define PDP_ENDIAN    0x42414443UL
+#define ENDIAN_ORDER  ('ABCD') 
+
 #define ASI8(V) static_cast<int8_t>(V)
 #define ASI16(V) static_cast<int16_t>(V)
 #define ASI32(V) static_cast<int32_t>(V)

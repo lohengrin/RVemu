@@ -2,6 +2,7 @@
 #include "Trap.h"
 
 #include <iostream>
+#include <iomanip>
 #include <string.h>
 #include <fstream>
 
@@ -71,68 +72,93 @@ void Memory::store(uint64_t addr, uint8_t size, uint64_t value)
 /// Load a byte from the little-endian dram.
 uint64_t Memory::load8(uint64_t addr) const
 {
-    return static_cast<uint64_t>(dram[addr]);
+    return ASU64(dram[addr]);
 }
 
 /// Load 2 bytes from the little-endian dram.
 uint64_t Memory::load16(uint64_t addr) const
 {
-    return static_cast<uint64_t>(dram[addr]) | static_cast<uint64_t>(dram[addr + 1]) << 8;
+#if ENDIAN_ORDER==LITTLE_ENDIAN
+    return ASU64(*((uint16_t*)&dram[addr]));
+#elif ENDIAN_ORDER==BIG_ENDIAN
+    return ASU64(dram[addr])
+        | ASU64(dram[addr + 1]) << 8;
+#endif
 }
 
 /// Load 4 bytes from the little-endian dram.
 uint64_t Memory::load32(uint64_t addr) const
 {
-    return static_cast<uint64_t>(dram[addr])
-        | static_cast<uint64_t>(dram[addr + 1]) << 8
-        | static_cast<uint64_t>(dram[addr + 2]) << 16
-        | static_cast<uint64_t>(dram[addr + 3]) << 24;
+#if ENDIAN_ORDER==LITTLE_ENDIAN
+    return ASU64(*((uint32_t*)&dram[addr]));
+#elif ENDIAN_ORDER==BIG_ENDIAN
+    return ASU64(dram[addr])
+        | ASU64(dram[addr + 1]) << 8
+        | ASU64(dram[addr + 2]) << 16
+        | ASU64(dram[addr + 3]) << 24;
+#endif
 }
 
 /// Load 8 bytes from the little-endian dram.
 uint64_t Memory::load64(uint64_t addr) const
 {
-    return static_cast<uint64_t>(dram[addr])
-        | static_cast<uint64_t>(dram[addr + 1]) << 8
-        | static_cast<uint64_t>(dram[addr + 2]) << 16
-        | static_cast<uint64_t>(dram[addr + 3]) << 24
-        | static_cast<uint64_t>(dram[addr + 4]) << 32
-        | static_cast<uint64_t>(dram[addr + 5]) << 40
-        | static_cast<uint64_t>(dram[addr + 6]) << 48
-        | static_cast<uint64_t>(dram[addr + 7]) << 56;
+#if ENDIAN_ORDER==LITTLE_ENDIAN
+    return *((uint64_t*)&dram[addr]);
+#elif ENDIAN_ORDER==BIG_ENDIAN
+    return ASU64(dram[addr])
+        | ASU64(dram[addr + 1]) << 8
+        | ASU64(dram[addr + 2]) << 16
+        | ASU64(dram[addr + 3]) << 24
+        | ASU64(dram[addr + 4]) << 32
+        | ASU64(dram[addr + 5]) << 40
+        | ASU64(dram[addr + 6]) << 48
+        | ASU64(dram[addr + 7]) << 56;
+#endif
 }
 
 /// Store a byte to the little-endian dram.
 void Memory::store8(uint64_t addr, uint64_t value) 
 {
-    dram[addr] = static_cast<uint8_t>(value);
+    dram[addr] = ASU8(value);
 }
 
 /// Store 2 bytes to the little-endian dram.
 void Memory::store16(uint64_t addr, uint64_t value) 
 {
-    dram[addr] = static_cast<uint8_t>(value & 0xff);
-    dram[addr + 1] = static_cast<uint8_t>((value >> 8) & 0xff);
+#if ENDIAN_ORDER==LITTLE_ENDIAN
+    * ((uint16_t*)&dram[addr]) = ASU16(value);
+#elif ENDIAN_ORDER==BIG_ENDIAN
+    dram[addr] = ASU8(value & 0xff);
+    dram[addr + 1] = ASU8((value >> 8) & 0xff);
+#endif
 }
 
 /// Store 4 bytes to the little-endian dram.
 void Memory::store32(uint64_t addr, uint64_t value) 
 {
-    dram[addr] = static_cast<uint8_t>(value & 0xff);
-    dram[addr + 1] = static_cast<uint8_t>((value >> 8) & 0xff);
-    dram[addr + 2] = static_cast<uint8_t>((value >> 16) & 0xff);
-    dram[addr + 3] = static_cast<uint8_t>((value >> 24) & 0xff);
+#if ENDIAN_ORDER==LITTLE_ENDIAN
+    * ((uint32_t*)&dram[addr]) = ASU32(value);
+#elif ENDIAN_ORDER==BIG_ENDIAN
+    dram[addr] = ASU8(value & 0xff);
+    dram[addr + 1] = ASU8((value >> 8) & 0xff);
+    dram[addr + 2] = ASU8((value >> 16) & 0xff);
+    dram[addr + 3] = ASU8((value >> 24) & 0xff);
+#endif
 }
 
 /// Store 8 bytes to the little-endian dram.
 void Memory::store64(uint64_t addr, uint64_t value)
 {
-    dram[addr] = static_cast<uint8_t>(value & 0xff);
-    dram[addr + 1] = static_cast<uint8_t>((value >> 8) & 0xff);
-    dram[addr + 2] = static_cast<uint8_t>((value >> 16) & 0xff);
-    dram[addr + 3] = static_cast<uint8_t>((value >> 24) & 0xff);
-    dram[addr + 4] = static_cast<uint8_t>((value >> 32) & 0xff);
-    dram[addr + 5] = static_cast<uint8_t>((value >> 40) & 0xff);
-    dram[addr + 6] = static_cast<uint8_t>((value >> 48) & 0xff);
-    dram[addr + 7] = static_cast<uint8_t>((value >> 56) & 0xff);
+#if ENDIAN_ORDER==LITTLE_ENDIAN
+    * ((uint64_t*)&dram[addr]) = ASU64(value);
+#elif ENDIAN_ORDER==BIG_ENDIAN
+    dram[addr] = ASU8(value & 0xff);
+    dram[addr + 1] = ASU8((value >> 8) & 0xff);
+    dram[addr + 2] = ASU8((value >> 16) & 0xff);
+    dram[addr + 3] = ASU8((value >> 24) & 0xff);
+    dram[addr + 4] = ASU8((value >> 32) & 0xff);
+    dram[addr + 5] = ASU8((value >> 40) & 0xff);
+    dram[addr + 6] = ASU8((value >> 48) & 0xff);
+    dram[addr + 7] = ASU8((value >> 56) & 0xff);
+#endif
 }
