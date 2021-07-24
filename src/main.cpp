@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 	std::unique_ptr<Cpu> cpu(new Cpu(*bus, DRAM_BASE+mem->size()));
 	std::unique_ptr<VirtIO> virtio(new VirtIO());
 
-	bus->addDevice(DRAM_BASE, mem.get());
+	bus->addDevice(DRAM_BASE, mem.get()); // Add first for faster access
 	bus->addDevice(PLIC_BASE, plic.get());
 	bus->addDevice(CLINT_BASE, clint.get());
 	bus->addDevice(UART_BASE, uart.get());
@@ -103,8 +103,6 @@ int main(int argc, char** argv)
 		std::cerr << "Error while loading: " << argv[2] << std::endl;
 		return 1;
 	}
-
-	printRegisters(cpu.get());
 
 	// Run program
 	try {

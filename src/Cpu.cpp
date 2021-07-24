@@ -99,8 +99,9 @@ uint64_t Cpu::translate(uint64_t addr, AccessType access_type) const
 	// in "The RISC-V Instruction Set Manual Volume II-Privileged Architecture_20190608".
 
 	// "A virtual address va is translated into a physical address pa as follows:"
-	uint64_t levels = 3;
-	uint64_t vpn[] = { (addr >> 12) & 0x1ff, (addr >> 21) & 0x1ff, (addr >> 30) & 0x1ff };
+	const uint64_t levels = 3;
+	const uint64_t vpn[] = { (addr >> 12) & 0x1ff, (addr >> 21) & 0x1ff, (addr >> 30) & 0x1ff };
+	const uint64_t vpnx8[] = { vpn[0]*8, vpn[1] * 8, vpn[2] * 8 };
 
 	// "1. Let a be satp.ppn × PAGESIZE, and let i = LEVELS − 1. (For Sv32, PAGESIZE=212
 	//     and LEVELS=2.)"
@@ -112,7 +113,7 @@ uint64_t Cpu::translate(uint64_t addr, AccessType access_type) const
 		// "2. Let pte be the value of the PTE at address a+va.vpn[i]×PTESIZE. (For Sv32,
 		//     PTESIZE=4.) If accessing pte violates a PMA or PMP check, raise an access
 		//     exception corresponding to the original access type."
-		pte = bus.load(a + vpn[i] * 8, 64);
+		pte = bus.load(a + vpnx8[i], 64);
 
 		// "3. If pte.v = 0, or if pte.r = 0 and pte.w = 1, stop and raise a page-fault
 		//     exception corresponding to the original access type."
@@ -152,7 +153,7 @@ uint64_t Cpu::translate(uint64_t addr, AccessType access_type) const
 	}
 
 	// A leaf PTE has been found.
-	uint64_t ppn[] = { (pte >> 10) & 0x1ff, (pte >> 19) & 0x1ff, (pte >> 28) & 0x03ffffff };
+	const uint64_t ppn[] = { (pte >> 10) & 0x1ff, (pte >> 19) & 0x1ff, (pte >> 28) & 0x03ffffff };
 
 	// We skip implementing from step 5 to 7.
 

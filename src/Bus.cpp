@@ -37,7 +37,7 @@ uint64_t Bus::load(uint64_t addr, uint8_t size) const
 
 void Bus::store(uint64_t addr, uint8_t size, uint64_t value)
 {
-	for (auto&& dev : myDevices)
+	for (const auto& dev : myDevices)
 	{
 		if (dev.base <= addr && addr < dev.end)
 		{
