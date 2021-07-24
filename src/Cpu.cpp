@@ -412,7 +412,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			case 0x1: regs[rd] = ASU64(ASI64(ASI32(warppingShl(regs[rs1], shamt)))); break;	// slliw
 			case 0x5:
 				switch (funct7) {
-				case 0x00: regs[rd] = ASI32(warppingShl(ASU32(regs[rs1]), shamt)); break;	// srliw
+				case 0x00: regs[rd] = ASI32(warppingShr(ASU32(regs[rs1]), shamt)); break;	// srliw
 				case 0x20: regs[rd] = ASU64(ASI64(warppingShr(ASI32(regs[rs1]), shamt))); break; // sraiw
 				default: executeError(opcode, funct3, funct7);
 				} break;

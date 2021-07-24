@@ -22,7 +22,7 @@ Device* Bus::getDevice(uint64_t baseaddr)
 
 uint64_t Bus::load(uint64_t addr, uint8_t size) const
 {
-	for (auto dev : myDevices)
+	for (const auto dev : myDevices)
 	{
 		if (dev.first <= addr && addr < dev.first + dev.second->size())
 			return dev.second->load(addr - dev.first, size);

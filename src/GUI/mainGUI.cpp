@@ -15,11 +15,9 @@ int main(int argc, char** argv)
 	MainWindow mwin;
 	mwin.show();
 
+	app.setQuitOnLastWindowClosed(true);
 
-	while (mwin.isVisible())
-	{
-		QApplication::processEvents();
-	}
+	app.exec();
 
 	return 0;
 }

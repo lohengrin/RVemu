@@ -109,14 +109,10 @@ int main(int argc, char** argv)
 	// Run program
 	try {
 		uint32_t inst = 0;
-		while (cpu->getPC() != 0)
+		while (true)
 		{
 			// 1. Fetch.
 			inst = cpu->fetch();
-			if (inst == 0)
-				break;
-
-			//std::cout << "=== PC: 0x" << std::setfill('0') << std::setw(16) << cpu->getPC() << std::endl;
 
 			// 2. Add 4 to the program counter.
 			cpu->forwardPC();

@@ -75,23 +75,18 @@ void printRegisters(const Cpu* cpu, std::ofstream& out)
 }
 
 //---------------------------------------------------------
-#if 0
-void printCsrs(const Cpu* cpu)
+void printCsrs(const Cpu* cpu, std::ofstream& out)
 {
-	std::cout << "==== CSRS ========================================" << std::endl;
-	std::cout << "mstatus=0x" << std::hex << std::setw(16) << cpu->getCsr(MSTATUS)
-		<< "\tmtvec=0x" << std::hex << std::setw(16) << cpu->getCsr(MTVEC)
-		<< "\tmepc=0x" << std::hex << std::setw(16) << cpu->getCsr(MEPC)
-		<< "\tmcause=0x" << std::hex << std::setw(16) << cpu->getCsr(MCAUSE) << std::endl;
+	out << "mstatus=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(MSTATUS)
+		<< " mtvec=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(MTVEC)
+		<< " mepc=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(MEPC)
+		<< " mcause=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(MCAUSE) << std::endl;
 
-	std::cout << "sstatus=0x" << std::hex << std::setw(16) << cpu->getCsr(SSTATUS)
-		<< "\tstvec=0x" << std::hex << std::setw(16) << cpu->getCsr(STVEC)
-		<< "\tsepc=0x" << std::hex << std::setw(16) << cpu->getCsr(SEPC)
-		<< "\tscause=0x" << std::hex << std::setw(16) << cpu->getCsr(SCAUSE) << std::endl;
-	std::cout << "==================================================" << std::endl;
+	out << "sstatus=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(SSTATUS)
+		<< " stvec=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(STVEC)
+		<< " sepc=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(SEPC)
+		<< " scause=0x" << std::hex << std::setfill('0') << std::setw(16) << cpu->getCsr(SCAUSE) << std::endl;
 }
-#endif
-
 
 //---------------------------------------------------
 void ComputerThread::run()
@@ -176,13 +171,6 @@ void ComputerThread::run()
 				previousMode = Mode::RUNNING;
 				// Run program
 				try {
-
-					if (cpu->getPC() == 0)
-					{
-						myCurrentMode = Mode::STOPED;
-						break;
-					}
-
 					// 1. Fetch.
 					uint32_t inst = cpu->fetch();
 
@@ -193,17 +181,20 @@ void ComputerThread::run()
 					uint8_t opcode, rd, rs1, rs2, funct3, funct7;
 					cpu->decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
-#if 1
-					static std::ofstream log("logcpp.txt");
-//					printRegisters(cpu, log);
-					log << "0x" << std::hex << std::setw(8) << std::setfill('0') << cpu->getPC()
-						<< ": opcode:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)inst
-						<< " rd:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rd
-						<< " rs1:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rs1
-						<< " rs2:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rs2
-						<< " f3:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)funct3
-						<< " f7:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)funct7 << std::endl;
-
+#if 0
+					if (cpu->record)
+					{
+						static std::ofstream log("logcpp.txt");
+						printRegisters(cpu, log);
+						printCsrs(cpu, log);
+						log << "0x" << std::hex << std::setw(8) << std::setfill('0') << cpu->getPC()
+							<< ": opcode:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)inst
+							<< " rd:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rd
+							<< " rs1:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rs1
+							<< " rs2:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)rs2
+							<< " f3:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)funct3
+							<< " f7:0x" << std::hex << std::setw(8) << std::setfill('0') << (uint64_t)funct7 << std::endl;
+					}
 					//- To GUI
 //					updateState(cpu, inst, opcode, rd, rs1, rs2, funct3, funct7);
 #endif
