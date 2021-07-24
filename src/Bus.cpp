@@ -7,25 +7,29 @@
 //! Device configuration
 bool Bus::addDevice(uint64_t baseaddr, Device* dev)
 {
-	myDevices[baseaddr] = dev;
+	if (!dev)
+		return false;
+	myDevices.push_back(DeviceEntry(baseaddr, dev->size(), dev));
 	return true;
 }
 
 Device* Bus::getDevice(uint64_t baseaddr)
 {
-	auto it = myDevices.find(baseaddr);
-	if (it != myDevices.end())
-		return it->second;
+	for (auto&& dev : myDevices)
+	{
+		if (dev.base == baseaddr)
+			return dev.device;
+	}
 	return nullptr;
 }
 
 
 uint64_t Bus::load(uint64_t addr, uint8_t size) const
 {
-	for (const auto dev : myDevices)
+	for (auto&& dev : myDevices)
 	{
-		if (dev.first <= addr && addr < dev.first + dev.second->size())
-			return dev.second->load(addr - dev.first, size);
+		if (dev.base <= addr && addr < dev.end)
+			return dev.device->load(addr - dev.base, size);
 	}
 
 	throw(CpuException(Except::LoadAccessFault));
@@ -33,11 +37,11 @@ uint64_t Bus::load(uint64_t addr, uint8_t size) const
 
 void Bus::store(uint64_t addr, uint8_t size, uint64_t value)
 {
-	for (auto dev : myDevices)
+	for (auto&& dev : myDevices)
 	{
-		if (dev.first <= addr && addr < dev.first + dev.second->size())
+		if (dev.base <= addr && addr < dev.end)
 		{
-			dev.second->store(addr - dev.first, size, value);
+			dev.device->store(addr - dev.base, size, value);
 			return;
 		}
 	}

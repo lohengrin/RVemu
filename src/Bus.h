@@ -17,6 +17,11 @@ public:
 	void store(uint64_t addr, uint8_t size, uint64_t value);
 
 protected:
-
-	std::map<uint64_t, Device*> myDevices;
+	struct DeviceEntry {
+		DeviceEntry(uint64_t b, uint64_t s, Device* d) : base(b), end(b+s), device(d) {};
+		uint64_t base;
+		uint64_t end;
+		Device* device;
+	};
+	std::vector<DeviceEntry> myDevices;
 };
