@@ -57,13 +57,13 @@ IF(NOT WIN32)
 ENDIF(NOT WIN32)
 
 IF(WITH_GUI)
-	target_include_directories(RVemu PRIVATE .)
+	target_include_directories(RVemu PRIVATE . ./GUI/)
 	target_compile_definitions(RVemu PRIVATE WITH_GUI)
-	target_link_libraries(RVemu	Qt5::Widgets)
+	target_link_libraries(RVemu Qt5::Widgets)
 ENDIF(WITH_GUI)
 
 IF(WITH_ELF)
-	target_link_libraries(RVemu PRIVATE elfio::elfio)
+	target_link_libraries(RVemu elfio::elfio)
 	target_compile_definitions(RVemu PRIVATE WITH_ELFIO)
 ENDIF(WITH_ELF)
 
