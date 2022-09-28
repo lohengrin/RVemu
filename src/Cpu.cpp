@@ -21,6 +21,8 @@ Cpu::Cpu(Bus& b, uint64_t spinit) :
 	page_table(0)
 {
 	regs[REGSP] = spinit;
+
+	csrs[MISA] = RV64 | RVI | RVU | RVS;
 }
 
 //---------------------------------------------------------

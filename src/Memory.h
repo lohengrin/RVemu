@@ -1,12 +1,17 @@
 #pragma once
 
 #include "Device.h"
+#include "ElfLoader.h"
 
 #include <vector>
 #include <stdint.h>
 
 // Default is 128MiB
 const size_t DEFAULT_MEMORYSIZE = 1024 * 1024 * 128;
+
+namespace ELFIO {
+	class elfio;
+}
 
 class Memory : public Device {
 public:
@@ -22,7 +27,7 @@ public:
 	//! Get address space size of device
 	uint64_t size() const {	return dram.size(); }
 
-	//! Preload memory with given program
+	//! Preload memory with given program (BIN or ELF)
 	bool preload(const std::string& file);
 
 	//! Get base memory adress
@@ -30,6 +35,8 @@ public:
 
 
 protected:
+	friend ElfLoader;
+
 	uint64_t load8(uint64_t addr) const;
 	uint64_t load16(uint64_t addr) const;
 	uint64_t load32(uint64_t addr) const;
@@ -39,6 +46,11 @@ protected:
 	void store16(uint64_t addr, uint64_t value);
 	void store32(uint64_t addr, uint64_t value);
 	void store64(uint64_t addr, uint64_t value);
+
+
+	bool loadbin(const std::string& file);
+	bool loadelf(const std::string& file, const ELFIO::elfio& reader);
+
 
 	std::vector<uint8_t> dram;
 };

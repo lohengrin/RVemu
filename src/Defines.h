@@ -18,12 +18,33 @@
 #define ASU32(V) static_cast<uint32_t>(V)
 #define ASU64(V) static_cast<uint64_t>(V)
 
+# define TARGET_LONG_BITS 64
+#define RV32 ((uint64_t)1 << (TARGET_LONG_BITS - 2))
+#define RV64 ((uint64_t)2 << (TARGET_LONG_BITS - 2))
+
+#define RV(x) ((uint64_t)1 << (x - 'A'))
+
+#define RVI RV('I')
+#define RVE RV('E') /* E and I are mutually exclusive */
+#define RVM RV('M')
+#define RVA RV('A')
+#define RVF RV('F')
+#define RVD RV('D')
+#define RVV RV('V')
+#define RVC RV('C')
+#define RVS RV('S')
+#define RVU RV('U')
+#define RVH RV('H')
+#define RVB RV('B')
+
 /// The page size (4 KiB) for the virtual dram system.
 const uint64_t PAGE_SIZE = 4096;
 
 // Machine-level CSRs.
 /// Machine status register.
 const uint64_t MSTATUS = 0x300;
+/// ISA and extensions register.
+const uint64_t MISA = 0x301;
 /// Machine exception delefation register.
 const uint64_t MEDELEG = 0x302;
 /// Machine interrupt delefation register.

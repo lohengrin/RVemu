@@ -15,10 +15,17 @@ Memory::~Memory()
 {
 }
 
+
 //! Preload memory
 bool Memory::preload(const std::string& file)
 {
-    // Load program
+    std::cout << "Loading as raw bin: " << file << std::endl;
+    return loadbin(file);
+}
+
+// Load in raw binary format
+bool Memory::loadbin(const std::string& file)     // Load program
+{
     std::ifstream program(file, std::ios::in | std::ios::binary | std::ios::ate);
     if (!program.is_open())
     {
@@ -28,10 +35,12 @@ bool Memory::preload(const std::string& file)
 
     size_t fsize = program.tellg();
     program.seekg(0, std::ios::beg);
-    program.read((char*) &dram[0], std::min(fsize, dram.size()));
+    program.read((char*)&dram[0], std::min(fsize, dram.size()));
 
     return true;
 }
+
+
 
 /// Load bytes from the little-endiam dram.
 uint64_t Memory::load(uint64_t addr, uint8_t size) const

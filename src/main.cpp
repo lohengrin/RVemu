@@ -7,6 +7,9 @@
 #include "Uart.h"
 #include "VirtIO.h"
 #include "Trap.h"
+#ifdef WITH_ELFIO
+#include "ElfLoader.h"
+#endif
 
 #include <iostream>
 #include <iomanip>
@@ -71,7 +74,7 @@ void printStack(const Cpu* cpu)
 int main(int argc, char** argv)
 {
 	// Check args
-	if (argc != 3)
+	if (argc < 2)
 	{
 		printUsage(argv[0]);
 		return 1;
@@ -91,17 +94,36 @@ int main(int argc, char** argv)
 	bus->addDevice(CLINT_BASE, clint.get());
 	bus->addDevice(UART_BASE, uart.get());
 	bus->addDevice(VIRTIO_BASE, virtio.get());
-		
-	if (!mem->preload(argv[1]))
+	
+	bool isElf = false;
+#ifdef WITH_ELFIO
+	ElfLoader eloader;
+	isElf = eloader.load(argv[1], mem.get());
+#endif
+
+	if (!isElf)
 	{
-		std::cerr << "Error while loading: " << argv[1] << std::endl;
-		return 1;
+		if (!isElf && !mem->preload(argv[1]))
+		{
+			std::cerr << "Error while loading: " << argv[1] << std::endl;
+			return 1;
+		}
+	}
+	else
+	{
+		if (eloader.ram_start != 0)
+			cpu->setPC(eloader.ram_start + DRAM_BASE);
+
+		cpu->store_csr(MTVEC, eloader.mtvec);
 	}
 
-	if (!virtio->loadDisk(argv[2]))
+	if (argc == 3)
 	{
-		std::cerr << "Error while loading: " << argv[2] << std::endl;
-		return 1;
+		if (!virtio->loadDisk(argv[2]))
+		{
+			std::cerr << "Error while loading: " << argv[2] << std::endl;
+			return 1;
+		}
 	}
 
 	// Run program

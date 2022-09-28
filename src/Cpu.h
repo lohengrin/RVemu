@@ -50,6 +50,7 @@ public:
 
 	//! Utility
 	uint64_t getPC() const { return pc; }
+	void setPC(uint64_t p) { pc = p; }
 	uint64_t getRegister(size_t i) const { return regs[i]; }
 	uint64_t getCsr(size_t i) const { return load_csr(i); }
 	uint64_t readMem(uint64_t addr, uint8_t size) const;
@@ -58,13 +59,13 @@ public:
 	const std::vector<uint64_t>& getRegs() const { return regs; }
 	const std::vector<uint64_t>& getCsrs() const { return csrs; }
 
-protected:
 	//! Cpu functions
 	uint64_t load(uint64_t addr, uint8_t size);
 	void store(uint64_t addr, uint8_t size, uint64_t value);
 	uint64_t load_csr(uint64_t addr) const;
 	void store_csr(uint64_t addr, uint64_t value);
 
+protected:
 
 	uint64_t warppingAdd(uint64_t a, uint64_t b) const { return a + b; }
 	uint64_t warppingAdd(uint64_t a, int64_t b) const { return a + b; }
