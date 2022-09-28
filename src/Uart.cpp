@@ -156,7 +156,7 @@ void Uart::store8(uint64_t addr, uint64_t value)
     if (addr == UART_THR)
     {
         if (myUseConsole)
-            std::cout << ASU8(value);
+            std::cout << ASU8(value) << std::flush;
         else
         {
             outputMutex.lock();
