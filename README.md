@@ -1,5 +1,6 @@
 # RVemu
-A "Simple" RISC-V Emulator written in C++
+A "Simple" RISC-V Emulator written in C++.
+For learning purpose.
 
 Based on https://book.rvemu.app/index.html
 
