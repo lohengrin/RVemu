@@ -111,8 +111,8 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		if (eloader.ram_start != 0)
-			cpu->setPC(eloader.ram_start + DRAM_BASE);
+		if (eloader.start != 0)
+			cpu->setPC(eloader.start);
 
 		cpu->store_csr(MTVEC, eloader.mtvec);
 	}

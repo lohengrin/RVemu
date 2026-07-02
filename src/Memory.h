@@ -49,7 +49,6 @@ protected:
 
 
 	bool loadbin(const std::string& file);
-	bool loadelf(const std::string& file, const ELFIO::elfio& reader);
 
 
 	std::vector<uint8_t> dram;
