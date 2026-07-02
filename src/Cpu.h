@@ -2,6 +2,8 @@
 
 #include "Bus.h"
 #include "Trap.h"
+#include "Uart.h"
+#include "VirtIO.h"
 
 #include <stdint.h>
 
@@ -95,8 +97,11 @@ protected:
 	uint64_t	pc;
 	//! SV39 paging flag.
 	bool enable_paging;
-	/// physical page number (PPN) × PAGE_SIZE (4096).
+	/// physical page number (PPN)  PAGE_SIZE (4096).
 	uint64_t page_table;
+	//! Cached device pointers for interrupt checking
+	class Uart* cached_uart = nullptr;
+	class VirtIO* cached_virtio = nullptr;
 public:
 	Bus& bus;
 };

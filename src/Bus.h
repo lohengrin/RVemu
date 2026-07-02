@@ -3,10 +3,11 @@
 #include "Device.h"
 
 #include <map>
+#include <algorithm>
 
 class Bus {
 public:
-	Bus() {}
+	Bus() : devices_sorted(false) {}
 	virtual ~Bus() {}
 
 	//! Device configuration
@@ -22,6 +23,13 @@ protected:
 		uint64_t base;
 		uint64_t end;
 		Device* device;
+		
+		bool operator<(const DeviceEntry& other) const {
+			return base < other.base;
+		}
 	};
 	std::vector<DeviceEntry> myDevices;
+	mutable bool devices_sorted;
+	
+	void ensureSorted() const;
 };

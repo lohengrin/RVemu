@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 
 			// 5. check interrupt
 			Interrupt i = cpu->check_pending_interrupt();
-			if (i != Interrupt::InvalidInterrupt)
+			if (i != Interrupt::InvalidInterrupt) [[unlikely]]
 				Trap::take_trap(cpu.get(), Except::InvalidExcept, i);
 		}
 	}

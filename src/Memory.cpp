@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <string.h>
 #include <fstream>
+#include <cstring>
 
 Memory::Memory(size_t size):
 	dram(size, 0x0)
@@ -85,43 +86,69 @@ uint64_t Memory::load8(uint64_t addr) const
 }
 
 /// Load 2 bytes from the little-endian dram.
+// The DRAM stores data in little-endian format regardless of host endianness.
+// On little-endian hosts: direct copy works (endianness matches)
+// On big-endian hosts: need to swap bytes to convert from little-endian dram to big-endian host
 uint64_t Memory::load16(uint64_t addr) const
 {
 #if BYTE_ORDER==LITTLE_ENDIAN
-    return ASU64(*((uint16_t*)&dram[addr]));
+    uint16_t result;
+    std::memcpy(&result, &dram[addr], sizeof(result));
+    return ASU64(result);
 #elif BYTE_ORDER==BIG_ENDIAN
-    return ASU64(dram[addr])
-        | ASU64(dram[addr + 1]) << 8;
+    uint16_t result;
+    std::memcpy(&result, &dram[addr], sizeof(result));
+    // Swap bytes to convert from little-endian dram to big-endian host
+    result = ((result & 0xFF) << 8) | ((result >> 8) & 0xFF);
+    return ASU64(result);
 #endif
 }
 
 /// Load 4 bytes from the little-endian dram.
+// The DRAM stores data in little-endian format regardless of host endianness.
+// On little-endian hosts: direct copy works (endianness matches)
+// On big-endian hosts: need to swap bytes to convert from little-endian dram to big-endian host
 uint64_t Memory::load32(uint64_t addr) const
 {
 #if BYTE_ORDER==LITTLE_ENDIAN
-    return ASU64(*((uint32_t*)&dram[addr]));
+    uint32_t result;
+    std::memcpy(&result, &dram[addr], sizeof(result));
+    return ASU64(result);
 #elif BYTE_ORDER==BIG_ENDIAN
-    return ASU64(dram[addr])
-        | ASU64(dram[addr + 1]) << 8
-        | ASU64(dram[addr + 2]) << 16
-        | ASU64(dram[addr + 3]) << 24;
+    uint32_t result;
+    std::memcpy(&result, &dram[addr], sizeof(result));
+    // Swap bytes to convert from little-endian dram to big-endian host
+    result = ((result & 0xFF) << 24) | 
+             ((result & 0xFF00) << 8) | 
+             ((result >> 8) & 0xFF00) | 
+             ((result >> 24) & 0xFF);
+    return ASU64(result);
 #endif
 }
 
 /// Load 8 bytes from the little-endian dram.
+// The DRAM stores data in little-endian format regardless of host endianness.
+// On little-endian hosts: direct copy works (endianness matches)
+// On big-endian hosts: need to swap bytes to convert from little-endian dram to big-endian host
 uint64_t Memory::load64(uint64_t addr) const
 {
 #if BYTE_ORDER==LITTLE_ENDIAN
-    return *((uint64_t*)&dram[addr]);
+    uint64_t result;
+    std::memcpy(&result, &dram[addr], sizeof(result));
+    return result;
 #elif BYTE_ORDER==BIG_ENDIAN
-    return ASU64(dram[addr])
-        | ASU64(dram[addr + 1]) << 8
-        | ASU64(dram[addr + 2]) << 16
-        | ASU64(dram[addr + 3]) << 24
-        | ASU64(dram[addr + 4]) << 32
-        | ASU64(dram[addr + 5]) << 40
-        | ASU64(dram[addr + 6]) << 48
-        | ASU64(dram[addr + 7]) << 56;
+    uint64_t result;
+    std::memcpy(&result, &dram[addr], sizeof(result));
+    // Swap bytes to convert from little-endian dram to big-endian host
+    result = ((result & 0xFF) << 56) | 
+             ((result & 0xFF00ULL) << 40) | 
+             ((result & 0xFF0000ULL) << 24) | 
+             ((result & 0xFF000000ULL) << 8) | 
+             ((result >> 8) & 0xFF000000ULL) | 
+             ((result >> 24) & 0xFF0000ULL) | 
+             ((result >> 40) & 0xFF00ULL) | 
+             ((result >> 56) & 0xFF);
+    return result;
 #endif
 }
 
@@ -132,42 +159,61 @@ void Memory::store8(uint64_t addr, uint64_t value)
 }
 
 /// Store 2 bytes to the little-endian dram.
+// The DRAM stores data in little-endian format regardless of host endianness.
+// On little-endian hosts: direct copy works (endianness matches)
+// On big-endian hosts: need to swap bytes to convert from big-endian host to little-endian dram
 void Memory::store16(uint64_t addr, uint64_t value) 
 {
 #if BYTE_ORDER==LITTLE_ENDIAN
-    * ((uint16_t*)&dram[addr]) = ASU16(value);
+    uint16_t val = ASU16(value);
+    std::memcpy(&dram[addr], &val, sizeof(val));
 #elif BYTE_ORDER==BIG_ENDIAN
-    dram[addr] = ASU8(value & 0xff);
-    dram[addr + 1] = ASU8((value >> 8) & 0xff);
+    uint16_t val = ASU16(value);
+    // Swap bytes to convert from big-endian host to little-endian dram
+    val = ((val & 0xFF) << 8) | ((val >> 8) & 0xFF);
+    std::memcpy(&dram[addr], &val, sizeof(val));
 #endif
 }
 
 /// Store 4 bytes to the little-endian dram.
+// The DRAM stores data in little-endian format regardless of host endianness.
+// On little-endian hosts: direct copy works (endianness matches)
+// On big-endian hosts: need to swap bytes to convert from big-endian host to little-endian dram
 void Memory::store32(uint64_t addr, uint64_t value) 
 {
 #if BYTE_ORDER==LITTLE_ENDIAN
-    * ((uint32_t*)&dram[addr]) = ASU32(value);
+    uint32_t val = ASU32(value);
+    std::memcpy(&dram[addr], &val, sizeof(val));
 #elif BYTE_ORDER==BIG_ENDIAN
-    dram[addr] = ASU8(value & 0xff);
-    dram[addr + 1] = ASU8((value >> 8) & 0xff);
-    dram[addr + 2] = ASU8((value >> 16) & 0xff);
-    dram[addr + 3] = ASU8((value >> 24) & 0xff);
+    uint32_t val = ASU32(value);
+    // Swap bytes to convert from big-endian host to little-endian dram
+    val = ((val & 0xFF) << 24) | 
+          ((val & 0xFF00) << 8) | 
+          ((val >> 8) & 0xFF00) | 
+          ((val >> 24) & 0xFF);
+    std::memcpy(&dram[addr], &val, sizeof(val));
 #endif
 }
 
 /// Store 8 bytes to the little-endian dram.
+// The DRAM stores data in little-endian format regardless of host endianness.
+// On little-endian hosts: direct copy works (endianness matches)
+// On big-endian hosts: need to swap bytes to convert from big-endian host to little-endian dram
 void Memory::store64(uint64_t addr, uint64_t value)
 {
 #if BYTE_ORDER==LITTLE_ENDIAN
-    * ((uint64_t*)&dram[addr]) = ASU64(value);
+    std::memcpy(&dram[addr], &value, sizeof(value));
 #elif BYTE_ORDER==BIG_ENDIAN
-    dram[addr] = ASU8(value & 0xff);
-    dram[addr + 1] = ASU8((value >> 8) & 0xff);
-    dram[addr + 2] = ASU8((value >> 16) & 0xff);
-    dram[addr + 3] = ASU8((value >> 24) & 0xff);
-    dram[addr + 4] = ASU8((value >> 32) & 0xff);
-    dram[addr + 5] = ASU8((value >> 40) & 0xff);
-    dram[addr + 6] = ASU8((value >> 48) & 0xff);
-    dram[addr + 7] = ASU8((value >> 56) & 0xff);
+    uint64_t val = value;
+    // Swap bytes to convert from big-endian host to little-endian dram
+    val = ((val & 0xFF) << 56) | 
+          ((val & 0xFF00ULL) << 40) | 
+          ((val & 0xFF0000ULL) << 24) | 
+          ((val & 0xFF000000ULL) << 8) | 
+          ((val >> 8) & 0xFF000000ULL) | 
+          ((val >> 24) & 0xFF0000ULL) | 
+          ((val >> 40) & 0xFF00ULL) | 
+          ((val >> 56) & 0xFF);
+    std::memcpy(&dram[addr], &val, sizeof(val));
 #endif
 }

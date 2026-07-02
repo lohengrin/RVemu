@@ -28,10 +28,23 @@ The emulator core (`Cpu`/`Bus`/`Memory`/`Uart`/`VirtIO`/`Clint`/`Plic`/`Trap`, p
 bin/RVemu <image> [disk.img]
 ```
 
-- `<image>` may be an ELF (`*.elf`, when `WITH_ELF=ON`) or raw binary (`*.bin`); ELF is auto-detected, otherwise loaded raw at `DRAM_BASE`.
+ - `<image>` may be an ELF (`*.elf`, when `WITH_ELF=ON`) or raw binary (`*.bin`); ELF is auto-detected, otherwise loaded raw at `DRAM_BASE`.
 - Optional second arg is a virtio disk image.
 - Boot xv6: `bin/RVemu test/xv6-kernel.bin test/xv6-fs.img`.
 - Guest UART output (writes to `0x10000000`) goes to stdout.
+
+## ELF Loading
+
+The ELF loader (`src/ElfLoader.cpp`) supports loading RV64 ELF executables when `WITH_ELF=ON`. Key features:
+- Uses program headers (PT_LOAD segments) instead of section headers for proper executable loading
+- Handles memory address translation with DRAM_BASE (0x80000000) offset
+- Supports multiple loadable segments (code, data, BSS)
+- Properly zero-fills BSS segments when `p_memsz > p_filesz`
+- Captures entry point from ELF header for PC initialization
+- Bounds checking to prevent memory corruption
+- Symbol extraction for compliance tests (begin_signature, end_signature, _start, __reset, __irq_wrapper)
+
+Test ELF files are compiled using the riscv64-unknown-elf toolchain and stored in `test/*.elf` for validation.
 
 ## Tests
 
@@ -42,7 +55,7 @@ ctest --test-dir build --output-on-failure   # run the suite
 ctest --test-dir build -R CpuInstruction      # run one fixture / case by name
 ```
 
-Coverage is the RV64I core: `Memory`/`Bus`/`Clint`/`Plic`/`VirtIO`/`Uart` devices, and the `Cpu` instruction matrix (OP-IMM, OP, RV32W, U-type, branches, `jal`/`jalr`, load/store at all widths with sign/zero extension, `x0` hardwiring, CSR ops). Tests drive the real `fetch -> forwardPC -> decode -> execute` pipeline on hand-encoded instruction words.
+Coverage is the RV64I core: `Memory`/`Bus`/`Clint`/`Plic`/`VirtIO`/`Uart` devices, `ElfLoader`, and the `Cpu` instruction matrix (OP-IMM, OP, RV32W, U-type, branches, `jal`/`jalr`, load/store at all widths with sign/zero extension, `x0` hardwiring, CSR ops). Tests drive the real `fetch -> forwardPC -> decode -> execute` pipeline on hand-encoded instruction words.
 
 Two PC convention gotchas when adding CPU tests: `forwardPC()` is applied **before** `execute()`, so inside `execute` `pc` already points past the current instruction (PC-relative forms subtract 4 internally). And load/store addresses must be `>= DRAM_BASE` — the Bus faults (fatally) on unmapped addresses, so build addresses with `auipc`/`addi` rather than as bare immediates.
 
@@ -55,6 +68,30 @@ The separate `test/` directory (note: singular, distinct from `tests/`) holds RI
   - DRAM `0x80000000`, UART `0x10000000`, VIRTIO `0x10001000`, CLINT `0x02000000`, PLIC `0x0c000000`.
 - CPU fetch/decode/execute loop and CSRs live in `Cpu.cpp` / `CpuUtils.cpp` / `Trap.cpp`.
 - The main loop in `src/main.cpp` runs a straight `fetch -> forwardPC -> decode -> execute -> check-interrupt` cycle with no per-instruction logging. `Memory::loadbin` still prints a per-byte hex dump of the loaded image once at startup. `bin.txt` and `elf.txt` in the repo root are historical captured debug dumps (from when the loop was verbose), not source or config.
+
+## Performance considerations
+
+Current implementation has several optimization opportunities for improved emulation speed:
+
+### Hot path optimizations (high impact):
+- **Bus device lookup**: Linear search O(n) on every memory access — consider sorting devices and using binary search or caching DRAM pointer
+- **Exception handling**: Try/catch in hot paths — move to higher-level error handling
+- **Interrupt checking**: Called every instruction, rarely triggered — use `[[unlikely]]` attribute and cache device pointers
+- **TLB implementation**: No translation lookaside buffer — add simple TLB for paging performance (20-40% improvement with paging)
+
+### Medium impact optimizations:
+- **Type-punning**: Undefined behavior in Memory.cpp — use `std::memcpy` for better optimization
+- **Register storage**: Vector allocation vs fixed arrays — use `std::array` for better cache locality
+- **Dispatch table**: Large switch statement — consider computed goto or jump table for branch prediction
+
+### Low effort, high impact wins:
+1. Fix type-punning in Memory.cpp (`std::memcpy` with endian-aware byte swapping)
+2. Cache device pointers for interrupt checking
+3. Remove redundant x0 register writes
+4. Use `[[unlikely]]` for rarely-taken branches
+5. Sort Bus devices for binary search lookup
+
+Estimated total potential improvement: **40-80%** depending on workload (paging vs. no paging, I/O vs. compute-bound).
 
 ## Style
 
