@@ -371,6 +371,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			else
 				executeError(opcode, funct3, funct7);
 		}
+		break;
 
 		case 0x13: //..................................................................
 		{
@@ -507,6 +508,7 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			case 0x5:
 				switch (funct7) {
 				case 0x00: regs[rd] = warppingShr(regs[rs1], shamt); break;		// srl
+				case 0x20: regs[rd] = ASU64(warppingShr(ASI64(regs[rs1]), shamt)); break; // sra
 				default: executeError(opcode, funct3, funct7);
 				} break;
 			case 0x6:
@@ -545,7 +547,14 @@ void Cpu::execute(uint32_t inst, uint8_t opcode, uint8_t rd, uint8_t rs1, uint8_
 			case 0x5:
 				switch (funct7) {
 				case 0x00: regs[rd] = ASU64(ASI32(warppingShr(ASU32(regs[rs1]), shamt))); break;		// srlw
-				case 0x01: regs[rd] = (regs[rs2] == 0) ? 0xffffffffffffffff : warppingDiv(regs[rs1], regs[rs2]); break;		// divu      // TODO: Set DZ (Divide by Zero) in the FCSR csr flag to 1.
+				case 0x01:
+					if (regs[rs2] == 0) {
+						regs[rd] = 0xffffffffffffffff;
+					} else {
+						uint32_t result = ASU32(regs[rs1]) / ASU32(regs[rs2]);
+						regs[rd] = ASU64(ASI64(ASI32(result)));
+					}
+					break;		// divuw      // TODO: Set DZ (Divide by Zero) in the FCSR csr flag to 1.
 				case 0x20: regs[rd] = ASU64(ASI32(regs[rs1]) >> ASI32(shamt)); break;				// sraw
 				default: executeError(opcode, funct3, funct7);
 				} break;

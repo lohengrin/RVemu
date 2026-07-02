@@ -1,0 +1,11 @@
+{
+	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+	"name": "rvemu",
+	"version-string": "0.1.0",
+	"description": "A simple RISC-V (RV64) emulator written in C++11.",
+	"dependencies": [
+		"elfio",
+		"gtest"
+	],
+	"builtin-baseline": "1f5e0348089e8a9b187f57d42866ebc871e815da"
+}

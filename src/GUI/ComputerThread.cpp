@@ -11,6 +11,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 
 //---------------------------------------------------
 ComputerThread::ComputerThread(const QString& programFile, const QString& diskImage, QObject* parent) :
@@ -215,6 +216,11 @@ void ComputerThread::run()
 				catch (const CpuFatal&)
 				{
 					//std::cerr << "Fatal Error: " << e.what() << std::endl;
+					myCurrentMode = Mode::STOPED;
+				}
+				catch (const CpuException& e)
+				{
+					std::cerr << "Cpu expection: " << e.what() << std::endl;
 					myCurrentMode = Mode::STOPED;
 				}
 			}

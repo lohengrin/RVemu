@@ -1,21 +1,9 @@
 
-IF(WITH_GUI)
-	set(GUI_FILES
-		GUI/MainWindow.cpp
-		GUI/MainWindow.h
-		GUI/MainWindow.ui
-		GUI/RVemu.qrc
-		GUI/ComputerThread.h
-		GUI/ComputerThread.cpp
-		GUI/Terminal.h
-		GUI/Terminal.cpp
-	)
-	SET(MAIN_FILE GUI/mainGUI.cpp)
-ELSE(WITH_GUI)
-	SET(MAIN_FILE main.cpp)
-ENDIF(WITH_GUI)
+# Core library: all device + CPU sources, reusable by the emulator
+# executable and the unit-test executables. The application entrypoint
+# (main.cpp / mainGUI.cpp) is NOT part of the library.
 
-set(SOURCE_FILES 
+set(CORE_FILES
 	Defines.h
 	Device.h
 	Cpu.h
@@ -38,33 +26,61 @@ set(SOURCE_FILES
 )
 
 IF(WITH_ELF)
-set(ELF_SOURCE_FILES 
-	ElfLoader.h
-	ElfLoader.cpp
-)
+	set(ELF_SOURCE_FILES
+		ElfLoader.h
+		ElfLoader.cpp
+	)
 ENDIF(WITH_ELF)
 
-
-add_executable(RVemu 
-${ELF_SOURCE_FILES}
-${SOURCE_FILES}
-${GUI_FILES}
-${MAIN_FILE}
+add_library(RVemuCore STATIC
+	${CORE_FILES}
+	${ELF_SOURCE_FILES}
 )
 
 IF(NOT WIN32)
-	target_link_libraries(RVemu	pthread)
+	target_link_libraries(RVemuCore	pthread)
 ENDIF(NOT WIN32)
 
+IF(WITH_ELF)
+	target_link_libraries(RVemuCore elfio::elfio)
+	target_compile_definitions(RVemuCore PUBLIC WITH_ELFIO)
+ENDIF(WITH_ELF)
+
+target_include_directories(RVemuCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+
+# Application entrypoint selection
 IF(WITH_GUI)
-	target_include_directories(RVemu PRIVATE . ./GUI/)
-	target_compile_definitions(RVemu PRIVATE WITH_GUI)
-	target_link_libraries(RVemu Qt5::Widgets)
+	set(GUI_FILES
+		GUI/MainWindow.cpp
+		GUI/MainWindow.h
+		GUI/MainWindow.ui
+		GUI/RVemu.qrc
+		GUI/ComputerThread.h
+		GUI/ComputerThread.cpp
+		GUI/Terminal.h
+		GUI/Terminal.cpp
+	)
+	set(MAIN_FILE GUI/mainGUI.cpp)
+ELSE(WITH_GUI)
+	set(MAIN_FILE main.cpp)
 ENDIF(WITH_GUI)
 
-IF(WITH_ELF)
-	target_link_libraries(RVemu elfio::elfio)
-	target_compile_definitions(RVemu PRIVATE WITH_ELFIO)
-ENDIF(WITH_ELF)
+add_executable(RVemu
+	${MAIN_FILE}
+	${GUI_FILES}
+)
+
+target_link_libraries(RVemu PRIVATE RVemuCore)
+
+IF(WITH_GUI)
+	find_package(Qt5 COMPONENTS Widgets REQUIRED)
+	set(CMAKE_AUTOMOC ON)
+	set(CMAKE_AUTORCC ON)
+	set(CMAKE_AUTOUIC ON)
+	target_include_directories(RVemu PRIVATE ./GUI/)
+	target_compile_definitions(RVemu PRIVATE WITH_GUI)
+	target_link_libraries(RVemu PRIVATE Qt5::Widgets)
+ENDIF(WITH_GUI)
 
 install(TARGETS RVemu DESTINATION ${INSTALL_BIN_DIR})

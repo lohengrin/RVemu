@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 4.0)
 
 project(RVemu)
 
 option(WITH_GUI "Compile Emulator with GUI" OFF)
 option(WITH_ELF "Compile Emulator with ELFIO" ON)
+option(WITH_TESTS "Build unit tests (requires GoogleTest)" ON)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 IF(WITH_GUI)
@@ -26,4 +27,7 @@ set(PROJECT_NAME RVemu)
 
 add_subdirectory(src)
 
-
+IF(WITH_TESTS AND NOT WITH_GUI)
+	enable_testing()
+	add_subdirectory(tests)
+ENDIF()
