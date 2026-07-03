@@ -84,3 +84,15 @@ IF(WITH_GUI)
 ENDIF(WITH_GUI)
 
 install(TARGETS RVemu DESTINATION ${INSTALL_BIN_DIR})
+
+if(WITH_BENCHMARK)
+	add_executable(RVemuBench benchmark_main.cpp)
+	target_link_libraries(RVemuBench PRIVATE RVemuCore)
+	install(TARGETS RVemuBench DESTINATION ${INSTALL_BIN_DIR})
+endif()
+
+if(WITH_VALIDATION)
+	add_executable(RVemuValidate validation_main.cpp)
+	target_link_libraries(RVemuValidate PRIVATE RVemuCore)
+	install(TARGETS RVemuValidate DESTINATION ${INSTALL_BIN_DIR})
+endif()
