@@ -33,6 +33,37 @@ bin/RVemu <image> [disk.img]
 - Boot xv6: `bin/RVemu test/xv6-kernel.bin test/xv6-fs.img`.
 - Guest UART output (writes to `0x10000000`) goes to stdout.
 
+## Benchmark
+
+Build a separate `RVemuBench` executable that measures xv6 boot time:
+
+```bash
+cmake -B build -DWITH_BENCHMARK=ON
+cmake --build build
+cmake --install build
+bin/RVemuBench test/xv6-kernel.bin test/xv6-fs.img
+```
+
+The benchmark boots xv6, monitors UART output for `"init: starting sh"`, and prints the wall-clock time to completion. Times out after 240 seconds if the string never appears. The `RVemuBench` binary is skipped when `WITH_BENCHMARK=OFF` (the default).
+
+CMake option:
+- `WITH_BENCHMARK` (default `OFF`) — builds the `RVemuBench` executable from `src/benchmark_main.cpp`.
+
+## Validation
+
+Build a separate `RVemuValidate` executable that verifies xv6 boots to userspace:
+
+```bash
+cmake -B build -DWITH_VALIDATION=ON
+cmake --build build
+build/src/RVemuValidate test/xv6-kernel.bin test/xv6-fs.img
+```
+
+The validation boots xv6, monitors UART output for `"init: starting sh"`, and exits with code 0 on success or 1 on failure/timeout. Times out after 240 seconds. The `RVemuValidate` binary is skipped when `WITH_VALIDATION=OFF` (the default).
+
+CMake option:
+- `WITH_VALIDATION` (default `OFF`) — builds the `RVemuValidate` executable from `src/validation_main.cpp`.
+
 ## ELF Loading
 
 The ELF loader (`src/ElfLoader.cpp`) supports loading RV64 ELF executables when `WITH_ELF=ON`. Key features:

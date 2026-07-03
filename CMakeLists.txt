@@ -5,9 +5,20 @@ project(RVemu)
 option(WITH_GUI "Compile Emulator with GUI" OFF)
 option(WITH_ELF "Compile Emulator with ELFIO" ON)
 option(WITH_TESTS "Build unit tests (requires GoogleTest)" ON)
+option(WITH_BENCHMARK "Build benchmark executable" OFF)
+option(WITH_VALIDATION "Build validation executable" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Default Build type to "Release" if not already specified in cache
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  endif()
+endif()
+
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}") 
 
 IF(WITH_GUI)
 	set(CMAKE_AUTOMOC ON)

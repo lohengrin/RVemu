@@ -155,14 +155,17 @@ void Uart::store8(uint64_t addr, uint64_t value)
 {
     if (addr == UART_THR)
     {
+        uint8_t ch = ASU8(value);
         if (myUseConsole)
-            std::cout << ASU8(value) << std::flush;
+            std::cout << ch << std::flush;
         else
         {
             outputMutex.lock();
-            output.push_back(ASU8(value));
+            output.push_back(ch);
             outputMutex.unlock();
         }
+        if (onOutput)
+            onOutput(ch);
     }
     else
     {

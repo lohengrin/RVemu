@@ -9,6 +9,7 @@
 #include <atomic>
 #include <mutex>
 #include <deque>
+#include <functional>
 
 /// The interrupt request of UART.
 const uint64_t UART_IRQ = 10;
@@ -44,9 +45,9 @@ public:
 
     //! Device Interface
     //!load
-    uint64_t load(uint64_t addr, uint8_t size) const;
+    Result<uint64_t> load(uint64_t addr, uint8_t size) const;
     //! store
-    void store(uint64_t addr, uint8_t size, uint64_t value);
+    Result<void> store(uint64_t addr, uint8_t size, uint64_t value);
     //! Get address space size of device
     uint64_t size() const { return UART_SIZE; }
 
@@ -59,6 +60,9 @@ public:
         if (interrupting) { interrupting = false; return true; }
         return false;
     }
+
+    //! Hook called for every character written to UART_THR.
+    void setOutputHook(std::function<void(uint8_t)> hook) { onOutput = std::move(hook); }
 
 protected:
     uint64_t load8(uint64_t addr) const;
@@ -85,6 +89,9 @@ protected:
 
     /// Bit if an interrupt happens.
     std::atomic<bool> interrupting;
+
+    /// Optional callback for every UART_THR byte written.
+    std::function<void(uint8_t)> onOutput;
 };
 
 
