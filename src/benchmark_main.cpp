@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 
 	if (!isElf)
 	{
-		if (!mem->preload(argv[1]))
+		if (!isElf && !mem->preload(argv[1]))
 		{
 			std::cerr << "Error while loading: " << argv[1] << std::endl;
 			return 1;
@@ -67,6 +67,7 @@ int main(int argc, char** argv)
 	{
 		if (eloader.start != 0)
 			cpu->setPC(eloader.start);
+
 		cpu->store_csr(MTVEC, eloader.mtvec);
 	}
 
@@ -99,21 +100,25 @@ int main(int argc, char** argv)
 		uint32_t inst = 0;
 		while (true)
 		{
+			// 1. Fetch.
 			inst = cpu->fetch();
+
+			// 2. Add 4 to the program counter.
 			cpu->forwardPC();
 
+			// 3. Decode.
 			uint8_t opcode, rd, rs1, rs2, funct3, funct7;
 			cpu->decode(inst, opcode, rd, rs1, rs2, funct3, funct7);
 
-			auto exec_result = cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
-			if (exec_result.is_error()) [[unlikely]] {
-				Except e = exec_result.error();
-				Trap::take_trap(cpu.get(), e);
-				if (Trap::is_fatal_except(e))
-					throw CpuFatal("Fatal exception during execute");
-				continue;
-			}
+			// Debug
+			//printInstruction(inst, opcode, rd, rs1, rs2, funct3, funct7);
+			//printCsrs(cpu.get());
+			//printStack(cpu.get());
 
+			// 4. Execute.
+			cpu->execute(inst, opcode, rd, rs1, rs2, funct3, funct7);
+
+			// 5. check interrupt
 			Interrupt i = cpu->check_pending_interrupt();
 			if (i != Interrupt::InvalidInterrupt) [[unlikely]]
 				Trap::take_trap(cpu.get(), Except::InvalidExcept, i);
