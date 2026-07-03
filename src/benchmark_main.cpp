@@ -15,12 +15,14 @@
 #include <iomanip>
 #include <chrono>
 #include <string>
+#include <csignal>
+#include <future>
 
 static constexpr int BENCHMARK_TIMEOUT_S = 30;
 
 // Signal handler to catch the interruption
 void timeout_handler(int signum) {
-    std::cout << "\n[Main Thread] Interrupted by Watchdog! Timeout reached.\n";
+    std::cout << "\n[Main Thread] Interrupted by Watchdog! Timeout reached." << std::endl;
     // Clean up and exit, or throw an exception to unwind the stack gracefully
     exit(1); 
 }
@@ -151,8 +153,8 @@ int main(int argc, char** argv)
 			if (i != Interrupt::InvalidInterrupt) [[unlikely]]
 				Trap::take_trap(cpu.get(), Except::InvalidExcept, i);
 
-			//if (found)
-				//break;
+			if (found)
+				break;
 
 		}
 	}
