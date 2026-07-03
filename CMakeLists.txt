@@ -6,7 +6,6 @@ option(WITH_GUI "Compile Emulator with GUI" OFF)
 option(WITH_ELF "Compile Emulator with ELFIO" ON)
 option(WITH_TESTS "Build unit tests (requires GoogleTest)" ON)
 option(WITH_BENCHMARK "Build benchmark executable" OFF)
-option(WITH_VALIDATION "Build validation executable" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

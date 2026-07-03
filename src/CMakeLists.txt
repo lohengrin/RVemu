@@ -91,8 +91,3 @@ if(WITH_BENCHMARK)
 	install(TARGETS RVemuBench DESTINATION ${INSTALL_BIN_DIR})
 endif()
 
-if(WITH_VALIDATION)
-	add_executable(RVemuValidate validation_main.cpp)
-	target_link_libraries(RVemuValidate PRIVATE RVemuCore)
-	install(TARGETS RVemuValidate DESTINATION ${INSTALL_BIN_DIR})
-endif()

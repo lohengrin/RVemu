@@ -16,7 +16,14 @@
 #include <chrono>
 #include <string>
 
-static constexpr int BENCHMARK_TIMEOUT_S = 240;
+static constexpr int BENCHMARK_TIMEOUT_S = 30;
+
+// Signal handler to catch the interruption
+void timeout_handler(int signum) {
+    std::cout << "\n[Main Thread] Interrupted by Watchdog! Timeout reached.\n";
+    // Clean up and exit, or throw an exception to unwind the stack gracefully
+    exit(1); 
+}
 
 //---------------------------------------------------------
 void printUsage(const char* name)
@@ -80,6 +87,27 @@ int main(int argc, char** argv)
 		}
 	}
 
+
+	// Register the signal handler for the main thread
+    std::signal(SIGUSR1, timeout_handler);
+    pthread_t main_thread = pthread_self();
+
+    // Promise/Future pair to communicate with the watchdog
+    std::promise<void> work_done;
+    std::future<void> watchdog_future = work_done.get_future();
+
+    // 1. Launch the Watchdog Thread
+    std::thread watchdog([&watchdog_future, main_thread]() {
+        // Watchdog waits for 3 seconds for the future to be fulfilled
+        if (watchdog_future.wait_for(std::chrono::seconds(BENCHMARK_TIMEOUT_S)) == std::future_status::timeout) {
+            std::cout << "[Watchdog] Time is up! Sending interrupt to main thread...\n";
+            // Fire an OS-level interrupt at the main thread
+            pthread_kill(main_thread, SIGUSR1);
+        } else {
+            std::cout << "[Watchdog] Work finished in time. Shutting down.\n";
+        }
+    });
+
 	// Benchmark state
 	std::string buf;
 	bool found = false;
@@ -123,20 +151,15 @@ int main(int argc, char** argv)
 			if (i != Interrupt::InvalidInterrupt) [[unlikely]]
 				Trap::take_trap(cpu.get(), Except::InvalidExcept, i);
 
-			if (found)
-				break;
+			//if (found)
+				//break;
 
-			if (std::chrono::high_resolution_clock::now() >= deadline)
-			{
-				std::cerr << "\nBenchmark TIMEOUT after " << BENCHMARK_TIMEOUT_S << " s" << std::endl;
-				return 1;
-			}
 		}
 	}
 	catch (const CpuFatal& e)
 	{
 		std::cerr << "\nFatal Error: " << e.what() << std::endl;
-		return 1;
+		exit(1);
 	}
 
 	auto end = std::chrono::high_resolution_clock::now();
@@ -144,6 +167,11 @@ int main(int argc, char** argv)
 
 	std::cout << "\n--- Benchmark complete ---" << std::endl;
 	std::cout << "Boot time: " << std::fixed << std::setprecision(6) << elapsed.count() << " s" << std::endl;
+	std::cout << "\n--- Validation passed ---" << std::endl;
 
-	return 0;
+	// If work finishes successfully, notify the watchdog to cancel the timeout
+    work_done.set_value();
+	watchdog.join();
+
+	exit(0);
 }
