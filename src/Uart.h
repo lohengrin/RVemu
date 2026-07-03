@@ -45,9 +45,9 @@ public:
 
     //! Device Interface
     //!load
-    Result<uint64_t> load(uint64_t addr, uint8_t size) const;
+    uint64_t load(uint64_t addr, uint8_t size) const;
     //! store
-    Result<void> store(uint64_t addr, uint8_t size, uint64_t value);
+    void store(uint64_t addr, uint8_t size, uint64_t value);
     //! Get address space size of device
     uint64_t size() const { return UART_SIZE; }
 
